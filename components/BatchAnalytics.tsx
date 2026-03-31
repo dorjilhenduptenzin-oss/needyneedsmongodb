@@ -199,6 +199,7 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
               <tr>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">{viewMode === 'batch' ? 'Reference' : 'Month'}</th>
                 <th className="px-4 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Orders</th>
+                <th className="px-4 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Delivery Qty</th>
                 <th className="px-6 py-4 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50/20">Sales</th>
                 <th className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expenses</th>
                 <th className="px-6 py-4 text-right text-[10px] font-bold text-indigo-700 uppercase tracking-widest bg-indigo-50/20">Net Profit</th>
@@ -210,6 +211,7 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 text-sm font-bold text-slate-900 font-serif">{viewMode === 'batch' ? row.batchName : row.monthYear}</td>
                   <td className="px-4 py-4 text-sm text-center font-semibold text-slate-500">{row.orderCount}</td>
+                  <td className="px-4 py-4 text-sm text-center font-semibold text-slate-500">{row.deliveryFeeQuantity}</td>
                   <td className="px-6 py-4 text-sm text-right font-bold text-emerald-600">BTN {row.totalSales.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                       <div className="flex flex-col text-[10px] font-medium text-slate-400 uppercase space-y-0.5">

@@ -30,6 +30,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
 
   const currentYear = new Date().getFullYear().toString();
   const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const batchYears = Array.from({ length: 12 }, (_, index) => String(2024 + index));
   
   const [bYear, setBYear] = useState(currentYear);
   const [bMonth, setBMonth] = useState(currentMonth);
@@ -214,7 +215,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
                 <div className="font-bold text-slate-400 px-2 shrink-0">BATCH -</div>
                 <div className="flex-1 w-full">
                     <select value={bYear} onChange={(e) => setBYear(e.target.value)} className={selectClasses}>
-                        {['2024', '2025', '2026', '2027'].map(y => <option key={y} value={y}>{y}</option>)}
+                    {batchYears.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                 </div>
                 <div className="flex-1 w-full">
@@ -227,7 +228,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
                 <div className="font-bold text-slate-400 px-1 shrink-0">-</div>
                 <div className="flex-1 w-full">
                     <select value={bNumber} onChange={(e) => setBNumber(e.target.value)} className={selectClasses}>
-                        {Array.from({length: 30}, (_, i) => String(i + 1).padStart(2, '0')).map(n => (
+                    {Array.from({length: 50}, (_, i) => String(i + 1).padStart(2, '0')).map(n => (
                             <option key={n} value={n}>{n}</option>
                         ))}
                     </select>
