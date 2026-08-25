@@ -129,11 +129,12 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
     const cost = deductions.allClosed ? deductions.totalCostPrice : 0;
     const delivery = deductions.allClosed ? deductions.totalDelivery : 0;
     const oat = deductions.allClosed ? deductions.totalOat : 0;
-    const otherLocalDelivery = localDeliveryFee;
+    const otherLocalDelivery = localDeliveryFee; // kept for display only; excluded from net calculation
     const otherExpenseValue = otherExpense;
     const salaryExpense = salaryDeduction;
 
-    const totalDeductions = cost + delivery + oat + salaryExpense + otherLocalDelivery + otherExpenseValue;
+    // Exclude otherLocalDelivery from total deductions per request
+    const totalDeductions = cost + delivery + oat + salaryExpense + otherExpenseValue;
     const netProfit = sales - totalDeductions;
 
     return { sales, cost, delivery, oat, salaryExpense, otherLocalDelivery, otherExpenseValue, totalDeductions, netProfit };
@@ -148,7 +149,8 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
       costPrice: deductions.allClosed ? deductions.totalCostPrice : null,
       deliveryFee: deductions.allClosed ? deductions.totalDelivery : null,
       oatPayment: deductions.allClosed ? deductions.totalOat : null,
-      fixedExpense: salaryDeduction + localDeliveryFee + otherExpense,
+      // Do not include localDeliveryFee in fixed expenses used for net profit
+      fixedExpense: salaryDeduction + otherExpense,
       netProfit: profitCalculation.netProfit,
       isBatchClosed: deductions.allClosed,
       savedAt: new Date().toISOString()
