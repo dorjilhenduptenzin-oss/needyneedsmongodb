@@ -19,7 +19,6 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
   const [startBatch, setStartBatch] = useState('');
   const [endBatch, setEndBatch] = useState('');
   const [salaryDeduction, setSalaryDeduction] = useState(50000);
-  const [localDeliveryFee, setLocalDeliveryFee] = useState(0);
   const [otherExpense, setOtherExpense] = useState(0);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -129,7 +128,6 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
     const cost = deductions.allClosed ? deductions.totalCostPrice : 0;
     const delivery = deductions.allClosed ? deductions.totalDelivery : 0;
     const oat = deductions.allClosed ? deductions.totalOat : 0;
-    const otherLocalDelivery = localDeliveryFee; // kept for display only; excluded from net calculation
     const otherExpenseValue = otherExpense;
     const salaryExpense = salaryDeduction;
 
@@ -137,8 +135,8 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
     const totalDeductions = cost + delivery + oat + salaryExpense + otherExpenseValue;
     const netProfit = sales - totalDeductions;
 
-    return { sales, cost, delivery, oat, salaryExpense, otherLocalDelivery, otherExpenseValue, totalDeductions, netProfit };
-  }, [monthlyStats, deductions, salaryDeduction, localDeliveryFee, otherExpense]);
+    return { sales, cost, delivery, oat, salaryExpense, otherExpenseValue, totalDeductions, netProfit };
+  }, [monthlyStats, deductions, salaryDeduction, otherExpense]);
 
   const handleSaveData = async () => {
     const monthYearStr = `${selectedYear}-${selectedMonth}`;
@@ -298,16 +296,7 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
             />
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Other Local Delivery Fee</label>
-            <input
-              type="number"
-              min="0"
-              value={localDeliveryFee}
-              onChange={(e) => setLocalDeliveryFee(Number(e.target.value) || 0)}
-              className={selectClasses}
-            />
-          </div>
+          {/* Other Local Delivery Fee input removed from UI */}
 
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Other Expense</label>
@@ -353,10 +342,7 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
             <span className="text-slate-300">Salary</span>
             <span className="font-semibold text-rose-400">- BTN {profitCalculation.salaryExpense.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-300">Other Local Delivery Fee</span>
-            <span className="font-semibold text-rose-400">- BTN {profitCalculation.otherLocalDelivery.toLocaleString()}</span>
-          </div>
+          {/* Other Local Delivery Fee removed from UI per request */}
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-300">Other Expense</span>
             <span className="font-semibold text-rose-400">- BTN {profitCalculation.otherExpenseValue.toLocaleString()}</span>
