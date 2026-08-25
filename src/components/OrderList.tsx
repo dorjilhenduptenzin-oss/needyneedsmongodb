@@ -11,12 +11,14 @@ interface OrderListProps {
   onAddMore: (order: Order) => void;
   onEditBatchCost?: (batchName: string) => void;
   onUpdateOrders: (orders: Order[]) => void;
+  onMoveCustomerOrders?: (orders: Order[], targetBatch: string) => void;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [batchFilter, setBatchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [batchMoveTarget, setBatchMoveTarget] = useState('');
   
   const [selectedCustomerKey, setSelectedCustomerKey] = useState<string | null>(null);
 
@@ -110,6 +112,21 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
       onDelete(id);
     }
   };
+  const handleDeleteCustomerHistory = (e: React.MouseEvent, orders: Order[] | null) => {
+    e.stopPropagation();
+    if (!orders || orders.length === 0) return;
+    if (window.confirm(`WARNING: Are you sure you want to delete ALL records for ${orders[0].customerName}? This action cannot be undone.`)) {
+      onDelete(orders.map(o => o.id));
+      setSelectedCustomerKey(null);
+    }
+  };
+  const handleMoveCustomerOrders = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!selectedGroupOrders || !onMoveCustomerOrders) return;
+    if (!batchMoveTarget || !batchMoveTarget.trim()) return;
+    onMoveCustomerOrders(selectedGroupOrders, batchMoveTarget.trim());
+    setSelectedCustomerKey(null);
+  };
   // Initialize batchMoveTarget only when a customer modal opens.
   useEffect(() => {
     if (!selectedCustomerKey) {
@@ -122,8 +139,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
       setBatchMoveTarget('');
     }
   }, [selectedCustomerKey]);
-    }
-  };
+
 
   const inputClasses = "w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-900 placeholder-slate-400";
   const selectClasses = "px-4 py-2 rounded-lg border border-slate-200 outline-none focus:border-rose-500 bg-white text-slate-900";
