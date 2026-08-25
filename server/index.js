@@ -9,7 +9,6 @@ dotenv.config();
 // export the app for serverless adapters
 // (export after app is defined)
 
-const isDirectServerRun = (() => {
 const app = express();
 const port = process.env.PORT || 4000;
 const mongoUri = process.env.MONGODB_URI;
