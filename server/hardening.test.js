@@ -45,6 +45,27 @@ test('order validation accepts valid order', () => {
   assert.equal(result.quantity, 2);
 });
 
+test('order validation allows blank optional fields', () => {
+  const result = validateOrderPayload({
+    orderId: 'ORD-9002',
+    batchName: 'BATCH-2025-01',
+    customerName: '',
+    address: '',
+    phoneNumber: '',
+    productName: '',
+    sellingPrice: 0,
+    quantity: 1,
+    advancePaid: 0,
+    transportMode: 'Keep at Shop',
+    isFullPaymentReceived: false
+  });
+
+  assert.equal(result.customerName, '');
+  assert.equal(result.address, '');
+  assert.equal(result.phoneNumber, '');
+  assert.equal(result.productName, '');
+});
+
 test('batch cost validation accepts valid record', () => {
   const result = validateBatchCostPayload({
     batchName: 'BATCH-2025-01',

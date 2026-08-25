@@ -148,7 +148,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName) return;
 
     const numericAdvance = advancePaid === '' ? 0 : advancePaid;
     const commonData = {
@@ -242,7 +241,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
             <div className="space-y-4">
               <div>
                 <label className={labelClasses}>Full Name</label>
-                <input required type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className={inputClasses} placeholder="John Doe" />
+                <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className={inputClasses} placeholder="John Doe" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -296,7 +295,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
                             <label className={labelClasses}>Base Price</label>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 font-bold text-xs">BTN</span>
-                              <input required type="number" min="0" value={item.basePrice} onChange={(e) => handleItemChange(item.id, 'basePrice', e.target.value === '' ? '' : parseFloat(e.target.value))} className={`${inputClasses} pl-12 text-base font-bold`} />
+                              <input type="number" min="0" value={item.basePrice} onChange={(e) => handleItemChange(item.id, 'basePrice', e.target.value === '' ? '' : parseFloat(e.target.value))} className={`${inputClasses} pl-12 text-base font-bold`} />
                             </div>
                             <p className="text-[10px] text-slate-400 font-medium mt-1">+ {FIXED_CHARGE} Service Fee</p>
                           </div>

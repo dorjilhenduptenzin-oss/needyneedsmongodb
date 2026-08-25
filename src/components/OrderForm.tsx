@@ -156,7 +156,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName) return;
 
     const numericAdvance = advancePaid === '' ? 0 : advancePaid;
     const commonData = {
@@ -254,7 +253,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Customer Name *</label>
                 <input
-                  required
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
@@ -334,7 +332,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
                           <div className="relative">
                             <span className="absolute left-3 top-2.5 text-slate-400">BTN</span>
                             <input
-                              required
                               type="number"
                               min="0"
                               value={item.basePrice}

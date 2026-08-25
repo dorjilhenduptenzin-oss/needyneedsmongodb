@@ -53,8 +53,9 @@ async function connectMongo() {
   return db;
 }
 
-export function validateNumberField(value, fieldName) {
+export function validateNumberField(value, fieldName, allowBlank = false) {
   if (value === undefined || value === null || value === '') {
+    if (allowBlank) return 0;
     throw new Error(`${fieldName} is required.`);
   }
 
@@ -81,10 +82,10 @@ export function validateOrderPayload(payload) {
 
   const orderId = validateStringField(payload.orderId ?? payload.id, 'orderId');
   const batchName = validateStringField(payload.batchName, 'batchName');
-  const customerName = validateStringField(payload.customerName, 'customerName');
-  const address = validateStringField(payload.address, 'address');
-  const phoneNumber = validateStringField(payload.phoneNumber, 'phoneNumber');
-  const productName = validateStringField(payload.productName, 'productName');
+  const customerName = validateStringField(payload.customerName ?? '', 'customerName', 0);
+  const address = validateStringField(payload.address ?? '', 'address', 0);
+  const phoneNumber = validateStringField(payload.phoneNumber ?? '', 'phoneNumber', 0);
+  const productName = validateStringField(payload.productName ?? '', 'productName', 0);
   const createdAtValue = payload.createdAt ?? Date.now();
   const createdAt = createdAtValue instanceof Date
     ? createdAtValue
@@ -104,10 +105,10 @@ export function validateOrderPayload(payload) {
     address,
     phoneNumber,
     productName,
-    sellingPrice: validateNumberField(payload.sellingPrice, 'sellingPrice'),
-    quantity: validateNumberField(payload.quantity, 'quantity'),
-    advancePaid: validateNumberField(payload.advancePaid, 'advancePaid'),
-    transportMode: validateStringField(payload.transportMode ?? 'Keep at Shop', 'transportMode'),
+    sellingPrice: validateNumberField(payload.sellingPrice ?? 0, 'sellingPrice', true),
+    quantity: validateNumberField(payload.quantity ?? 0, 'quantity', true),
+    advancePaid: validateNumberField(payload.advancePaid ?? 0, 'advancePaid', true),
+    transportMode: validateStringField(payload.transportMode ?? 'Keep at Shop', 'transportMode', 0),
     note: payload.note ?? '',
     isFullPaymentReceived: Boolean(payload.isFullPaymentReceived),
     isDeleted: Boolean(payload.isDeleted),
