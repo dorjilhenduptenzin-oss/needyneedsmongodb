@@ -297,7 +297,10 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
                         <div className="flex gap-3">
                           <select
                             value={batchMoveTarget}
-                            onChange={(e) => setBatchMoveTarget(e.target.value)}
+                            onChange={(e) => {
+                              console.debug('Move dropdown changed to', e.target.value);
+                              setBatchMoveTarget(e.target.value);
+                            }}
                             className="flex-1 px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 bg-white text-slate-900 text-sm font-medium"
                           >
                             <option value="">Select batch</option>
