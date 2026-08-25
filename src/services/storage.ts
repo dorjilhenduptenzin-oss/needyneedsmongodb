@@ -16,6 +16,15 @@ export interface SummaryEntry {
 
 declare const importMetaEnv: any;
 const API_BASE: string = (typeof importMetaEnv !== 'undefined' && importMetaEnv.VITE_API_BASE) || (typeof process !== 'undefined' && process.env.VITE_API_BASE) || '/api';
+const ADMIN_HEADER_VALUE: string | undefined = (typeof importMetaEnv !== 'undefined' && importMetaEnv.VITE_ADMIN_API_KEY) || (typeof process !== 'undefined' && process.env.VITE_ADMIN_API_KEY) || undefined;
+
+const buildHeaders = (extra: Record<string, string> = {}) => {
+  const headers: Record<string, string> = { ...extra };
+  if (ADMIN_HEADER_VALUE) {
+    headers['x-admin-key'] = ADMIN_HEADER_VALUE;
+  }
+  return headers;
+};
 
 const normalizeOrder = (item: any): Order => ({
   id: String(item.orderId || item.id || ''),
@@ -75,7 +84,7 @@ export const loadDataFromSheets = async () => {
 export const createOrder = async (order: Order) => {
   const response = await fetch(`${API_BASE}/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ ...order, orderId: order.id, id: order.id })
   });
 
@@ -90,7 +99,7 @@ export const createOrder = async (order: Order) => {
 export const updateOrder = async (order: Order) => {
   const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(order.id)}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ ...order, orderId: order.id, version: order.version || 1 })
   });
 
@@ -104,7 +113,8 @@ export const updateOrder = async (order: Order) => {
 
 export const deleteOrder = async (orderId: string) => {
   const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    headers: buildHeaders()
   });
 
   if (!response.ok) {
@@ -117,7 +127,7 @@ export const deleteOrder = async (orderId: string) => {
 export const createBatchCost = async (cost: BatchCost) => {
   const response = await fetch(`${API_BASE}/batchCosts`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(cost)
   });
 
@@ -132,7 +142,7 @@ export const createBatchCost = async (cost: BatchCost) => {
 export const updateBatchCost = async (cost: BatchCost) => {
   const response = await fetch(`${API_BASE}/batchCosts/${encodeURIComponent(cost.batchName)}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ ...cost, version: cost.version ?? 1 })
   });
 
@@ -147,7 +157,7 @@ export const updateBatchCost = async (cost: BatchCost) => {
 export const saveSummaryEntry = async (entry: SummaryEntry) => {
   const response = await fetch(`${API_BASE}/summary`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(entry)
   });
 
