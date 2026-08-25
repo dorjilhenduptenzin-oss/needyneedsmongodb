@@ -294,7 +294,8 @@ app.delete('/api/orders/:orderId', requireWriteAccess, async (req, res) => {
   try {
     const orderId = String(req.params.orderId || '');
     const database = await connectMongo();
-    const result = await database.collection('orders').findOneAndUpdate(
+    // Try to mark deleted by orderId first (common case)
+    let result = await database.collection('orders').findOneAndUpdate(
       { orderId, isDeleted: { $ne: true } },
       {
         $set: {
@@ -307,7 +308,49 @@ app.delete('/api/orders/:orderId', requireWriteAccess, async (req, res) => {
       { returnDocument: 'after' }
     );
 
+    // If not found, attempt to interpret orderId as an ObjectId and try again
     if (!result.value) {
+      try {
+        const { ObjectId } = await import('mongodb');
+        if (ObjectId.isValid(orderId)) {
+          result = await database.collection('orders').findOneAndUpdate(
+            { _id: new ObjectId(orderId), isDeleted: { $ne: true } },
+            {
+              $set: {
+                isDeleted: true,
+                deletedAt: new Date().toISOString(),
+                deletedBy: req.headers['x-admin-key'] || 'system',
+                updatedAt: new Date().toISOString()
+              }
+            },
+            { returnDocument: 'after' }
+          );
+        }
+      } catch (e) {
+        // ignore and continue
+      }
+    }
+
+    // If still not found, attempt a permissive update (idempotent) to set isDeleted=true for any matching orderId
+    if (!result.value) {
+      const updateRes = await database.collection('orders').updateMany(
+        { orderId },
+        {
+          $set: {
+            isDeleted: true,
+            deletedAt: new Date().toISOString(),
+            deletedBy: req.headers['x-admin-key'] || 'system',
+            updatedAt: new Date().toISOString()
+          }
+        }
+      );
+
+      if (updateRes.modifiedCount > 0) {
+        // Return a synthetic response indicating success
+        return res.json({ ok: true, deleted: true, modifiedCount: updateRes.modifiedCount, message: 'Order(s) marked deleted.' });
+      }
+
+      // Nothing matched; return 404 to inform caller
       return res.status(404).json({ error: 'Order not found.' });
     }
 

@@ -143,12 +143,21 @@ export default function App() {
       setIsSyncing(true);
       setSyncError(null);
 
-      for (const id of idsToKill) {
-        await deleteOrder(id);
-      }
-
+      // Optimistic UI update: remove locally first so app reflects deletion immediately
       const killSet = new Set(idsToKill);
       setOrders(prev => prev.filter(order => !killSet.has(String(order.id).trim())));
+
+      // Perform deletes; if any fail we'll refresh from server
+      for (const id of idsToKill) {
+        try {
+          await deleteOrder(id);
+        } catch (e) {
+          console.error('Delete failed for', id, e);
+          // refresh to ensure client matches server
+          await refreshData();
+          throw e;
+        }
+      }
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to delete order. The change has not been confirmed.');
     } finally {
@@ -172,17 +181,21 @@ export default function App() {
       setIsSyncing(true);
       setSyncError(null);
 
-      const updatedOrders: Order[] = [];
-      for (const order of ordersToMove) {
-        const nextOrder = { ...order, batchName: targetBatch.trim(), version: order.version || 1 };
-        const persisted = await updateOrder(nextOrder);
-        updatedOrders.push(persisted as Order);
-      }
+      // Optimistic update: apply the batch change immediately in UI
+      const updatedOrders: Order[] = ordersToMove.map(o => ({ ...o, batchName: targetBatch.trim(), version: (o.version || 1) + 1 }));
+      const updatesMap = new Map(updatedOrders.map(o => [String(o.id).trim(), o]));
+      setOrders(prev => prev.map(o => updatesMap.has(String(o.id).trim()) ? updatesMap.get(String(o.id).trim())! : o));
 
-      setOrders(prev => {
-        const updates = new Map(updatedOrders.map(o => [String(o.id).trim(), o]));
-        return prev.map(o => updates.has(String(o.id).trim()) ? updates.get(String(o.id).trim())! : o);
-      });
+      // Send updates to server; on failure refresh from server to reconcile
+      for (const order of updatedOrders) {
+        try {
+          await updateOrder(order);
+        } catch (e) {
+          console.error('Move failed for', order.id, e);
+          await refreshData();
+          throw e;
+        }
+      }
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to move the customer orders to the new batch.');
     } finally {
