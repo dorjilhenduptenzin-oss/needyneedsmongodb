@@ -110,13 +110,18 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
       onDelete(id);
     }
   };
-
-  const handleDeleteCustomerHistory = (e: React.MouseEvent, customerOrders: Order[]) => {
-    e.stopPropagation();
-    const count = customerOrders.length;
-    if (window.confirm(`WARNING: This will permanently delete ALL ${count} order records for this customer. Do you want to proceed?`)) {
-      onDelete(customerOrders.map(o => o.id));
-      setSelectedCustomerKey(null);
+  // Initialize batchMoveTarget only when a customer modal opens.
+  useEffect(() => {
+    if (!selectedCustomerKey) {
+      setBatchMoveTarget('');
+      return;
+    }
+    if (selectedGroupOrders && selectedGroupOrders.length > 0) {
+      setBatchMoveTarget(selectedGroupOrders[0].batchName || '');
+    } else {
+      setBatchMoveTarget('');
+    }
+  }, [selectedCustomerKey]);
     }
   };
 

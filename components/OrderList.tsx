@@ -65,13 +65,18 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
     return [...group].sort((a, b) => b.createdAt - a.createdAt);
   }, [groupedOrdersMap, selectedCustomerKey]);
 
+  // Initialize batchMoveTarget only when a customer is selected (open modal).
   useEffect(() => {
-    if (!selectedGroupOrders || selectedGroupOrders.length === 0) {
+    if (!selectedCustomerKey) {
       setBatchMoveTarget('');
       return;
     }
-    setBatchMoveTarget(selectedGroupOrders[0].batchName || '');
-  }, [selectedGroupOrders]);
+    if (selectedGroupOrders && selectedGroupOrders.length > 0) {
+      setBatchMoveTarget(selectedGroupOrders[0].batchName || '');
+    } else {
+      setBatchMoveTarget('');
+    }
+  }, [selectedCustomerKey]);
 
   // Aggregate unique notes for the selected customer
   const customerNotes = useMemo(() => {
