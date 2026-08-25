@@ -14,7 +14,8 @@ export interface SummaryEntry {
   savedAt: string;
 }
 
-const API_BASE = '/api';
+declare const importMetaEnv: any;
+const API_BASE: string = (typeof importMetaEnv !== 'undefined' && importMetaEnv.VITE_API_BASE) || (typeof process !== 'undefined' && process.env.VITE_API_BASE) || '/api';
 
 const normalizeOrder = (item: any): Order => ({
   id: String(item.orderId || item.id || ''),
