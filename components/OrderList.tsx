@@ -22,7 +22,10 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
   
   const [selectedCustomerKey, setSelectedCustomerKey] = useState<string | null>(null);
 
-  const uniqueBatches = Array.from(new Set(orders.map(o => o.batchName))).sort().reverse();
+  const uniqueBatches = Array.from(new Set([
+    ...orders.map(o => o.batchName),
+    ...(batchCosts || []).map(b => b.batchName)
+  ])).filter(Boolean).sort().reverse();
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -298,9 +301,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
                             className="flex-1 px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 bg-white text-slate-900 text-sm font-medium"
                           >
                             <option value="">Select batch</option>
-                            {Array.from(new Set(orders.map(o => o.batchName))).sort().reverse().map(batchName => (
-                              <option key={batchName} value={batchName}>{batchName}</option>
-                            ))}
+                            {uniqueBatches.map(batchName => (
+                                <option key={batchName} value={batchName}>{batchName}</option>
+                              ))}
                           </select>
                           <button
                             onClick={handleMoveCustomerOrders}

@@ -20,7 +20,10 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
   
   const [selectedCustomerKey, setSelectedCustomerKey] = useState<string | null>(null);
 
-  const uniqueBatches = Array.from(new Set(orders.map(o => o.batchName)));
+  const uniqueBatches = Array.from(new Set([
+    ...orders.map(o => o.batchName),
+    ...(batchCosts || []).map(b => b.batchName)
+  ])).filter(Boolean).sort().reverse();
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
