@@ -181,17 +181,18 @@ export default function App() {
       setIsSyncing(true);
       setSyncError(null);
 
-      // Optimistic update: apply the batch change immediately in UI
-      const updatedOrders: Order[] = ordersToMove.map(o => ({ ...o, batchName: targetBatch.trim(), version: (o.version || 1) + 1 }));
-      const updatesMap = new Map(updatedOrders.map(o => [String(o.id).trim(), o]));
+      // Optimistic update: apply the batch change immediately in UI (show incremented version locally)
+      const updatedOrdersForUI: Order[] = ordersToMove.map(o => ({ ...o, batchName: targetBatch.trim(), version: (o.version || 1) + 1 }));
+      const updatesMap = new Map(updatedOrdersForUI.map(o => [String(o.id).trim(), o]));
       setOrders(prev => prev.map(o => updatesMap.has(String(o.id).trim()) ? updatesMap.get(String(o.id).trim())! : o));
 
-      // Send updates to server; on failure refresh from server to reconcile
-      for (const order of updatedOrders) {
+      // Send updates to server using the current server version (do NOT send incremented version)
+      for (const originalOrder of ordersToMove) {
+        const payloadOrder: Order = { ...originalOrder, batchName: targetBatch.trim(), version: originalOrder.version || 1 };
         try {
-          await updateOrder(order);
+          await updateOrder(payloadOrder);
         } catch (e) {
-          console.error('Move failed for', order.id, e);
+          console.error('Move failed for', originalOrder.id, e);
           await refreshData();
           throw e;
         }
