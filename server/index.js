@@ -5,7 +5,9 @@ import dotenv from 'dotenv';
 import { pathToFileURL } from 'node:url';
 
 dotenv.config();
-export default app;
+
+// export the app for serverless adapters
+// (export after app is defined)
 
 const isDirectServerRun = (() => {
 const app = express();
@@ -487,6 +489,8 @@ const isDirectServerRun = (() => {
     return false;
   }
 })();
+
+export default app;
 
 if (isDirectServerRun) {
   app.listen(port, () => {
