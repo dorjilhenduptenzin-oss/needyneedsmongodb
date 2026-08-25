@@ -5,7 +5,9 @@ import dotenv from 'dotenv';
 import { pathToFileURL } from 'node:url';
 
 dotenv.config();
+export default app;
 
+const isDirectServerRun = (() => {
 const app = express();
 const port = process.env.PORT || 4000;
 const mongoUri = process.env.MONGODB_URI;

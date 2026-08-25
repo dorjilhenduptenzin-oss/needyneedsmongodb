@@ -11,6 +11,7 @@
     "migrate:dry-run": "node scripts/migrate_historical_excel.js --dry-run"
   },
   "dependencies": {
+    "serverless-http": "^2.8.0",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
