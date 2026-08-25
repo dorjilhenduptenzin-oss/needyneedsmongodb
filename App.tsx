@@ -40,6 +40,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [batchToEditInAnalytics, setBatchToEditInAnalytics] = useState<string | null>(null);
 
   useEffect(() => { ordersRef.current = orders; }, [orders]);
@@ -71,6 +72,7 @@ export default function App() {
     if (isLoading) return;
     const timer = setTimeout(() => {
       setSyncError(null);
+      setSyncMessage(null);
     }, 0);
     return () => clearTimeout(timer);
   }, [orders, batchCosts, isLoading]);
@@ -124,6 +126,7 @@ export default function App() {
       setEditingOrder(null);
       setCustomerContext(null);
       setCurrentView(APP_VIEWS.ORDER_LIST);
+      setSyncMessage(editingOrder ? 'Order updated successfully' : 'Order saved successfully');
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to save order. The change has not been confirmed.');
     } finally {
@@ -198,6 +201,7 @@ export default function App() {
         if (idx >= 0) next[idx] = persisted as BatchCost; else next.push(persisted as BatchCost);
         return next;
       });
+      setSyncMessage('Batch cost updated successfully');
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to save batch cost. The change has not been confirmed.');
     } finally {
@@ -263,9 +267,9 @@ export default function App() {
                  </div>
                ) : (
                  <div className={`font-bold text-xs flex items-center gap-2 ${syncError ? 'text-rose-600' : 'text-slate-900'}`}>
-                   {syncError ? <CloudOff size={14} /> : <Cloud size={14} />}
-                   {syncError ? 'Live DB Unavailable' : 'Live MongoDB'}
-                 </div>
+                     {syncError ? <CloudOff size={14} /> : <Cloud size={14} />}
+                     {syncError ? (syncError.length > 60 ? syncError.substring(0,57) + '...' : syncError) : (syncMessage ? syncMessage : 'Live MongoDB')}
+                   </div>
                )}
            </div>
 

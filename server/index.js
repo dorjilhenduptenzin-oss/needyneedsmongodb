@@ -26,22 +26,10 @@ const isWriteRequest = (req) => {
   return String(provided || '') === API_KEY;
 };
 
+// Lightweight write protection removed per project request:
+// Allow all requests through to write endpoints in production.
 const requireWriteAccess = (req, res, next) => {
-  if (process.env.NODE_ENV === 'production' || (process.env.NODE_ENV && process.env.NODE_ENV !== 'development')) {
-    if (!isWriteRequest(req)) {
-      return res.status(401).json({ error: 'Authentication required for database writes.' });
-    }
-    return next();
-  }
-
-  if (isWriteRequest(req)) {
-    return next();
-  }
-
-  if (req.method === 'GET') {
-    return next();
-  }
-
+  // No-op authorization to allow writes from production frontend.
   return next();
 };
 
