@@ -84,7 +84,7 @@ export const createOrder = async (order: Order) => {
   }
 
   const payload = await response.json();
-  return payload.order || order;
+  return normalizeOrder(payload.order || order);
 };
 
 export const updateOrder = async (order: Order) => {
@@ -99,7 +99,7 @@ export const updateOrder = async (order: Order) => {
   }
 
   const payload = await response.json();
-  return payload.order || order;
+  return normalizeOrder(payload.order || order);
 };
 
 export const deleteOrder = async (orderId: string) => {
@@ -126,7 +126,7 @@ export const createBatchCost = async (cost: BatchCost) => {
   }
 
   const payload = await response.json();
-  return payload.batchCost || cost;
+  return normalizeCost(payload.batchCost || cost);
 };
 
 export const updateBatchCost = async (cost: BatchCost) => {
@@ -141,7 +141,7 @@ export const updateBatchCost = async (cost: BatchCost) => {
   }
 
   const payload = await response.json();
-  return payload.batchCost || cost;
+  return normalizeCost(payload.batchCost || cost);
 };
 
 export const saveSummaryEntry = async (entry: SummaryEntry) => {
