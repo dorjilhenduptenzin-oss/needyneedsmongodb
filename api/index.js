@@ -1,8 +1,7 @@
 import serverApp from '../server/index.js';
-import serverless from 'serverless-http';
 
-const handler = serverless(serverApp);
-
-export default async function (req, res) {
-  return handler(req, res);
+// Vercel Node serverless functions can call an Express `app` directly.
+// Avoid `serverless-http` version issues by invoking the app function.
+export default function (req, res) {
+  return serverApp(req, res);
 }

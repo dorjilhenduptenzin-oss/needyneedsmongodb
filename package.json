@@ -8,10 +8,10 @@
     "server": "node server/index.js",
     "build": "tsc && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "migrate:dry-run": "node scripts/migrate_historical_excel.js --dry-run"
+    "migrate:dry-run": "node scripts/migrate_historical_excel.js --dry-run",
+    "generate:admin-key": "node scripts/generate_admin_key.js"
   },
   "dependencies": {
-    "serverless-http": "^2.8.0",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
