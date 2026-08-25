@@ -26,6 +26,7 @@ export interface Order {
 
   // Status
   isFullPaymentReceived: boolean;
+  version?: number;
 }
 
 export type OrderFormData = Omit<Order, 'id' | 'createdAt'>;
@@ -42,6 +43,9 @@ export interface BatchCost {
   totalCostPrice: number;
   oatInputValue: number; // Quantity for Oat payment
   deliveryFeeQuantity?: number; // Manual override for delivery fee quantity
+  isPacked?: boolean;
+  packedAt?: string | null;
+  version?: number;
 }
 
 export interface BatchSummary {
@@ -65,6 +69,8 @@ export interface BatchSummary {
   // Meta for UI
   oatInputValue: number;
   deliveryFeeQuantity: number;
+  isPacked?: boolean;
+  packedAt?: string | null;
 }
 
 export interface CustomerTrend {

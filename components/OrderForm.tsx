@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Order, OrderFormData, TransportMode } from '../types';
 import { TRANSPORT_MODES, FIXED_CHARGE } from '../constants';
 import { Save, Plus, Trash2, Layers, AlertTriangle, XCircle, Wallet, ReceiptText, Calculator, Landmark, Coins, Info } from 'lucide-react';
+import { distributeAdvanceAcrossItems } from '../utils/advanceDistribution';
 
 interface OrderFormProps {
   initialData?: OrderFormData;
@@ -150,7 +151,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
     if (!customerName) return;
 
     const numericAdvance = advancePaid === '' ? 0 : advancePaid;
-    let distributedAdvance = 0;
     const commonData = {
       batchName: fullBatchName,
       customerName,
@@ -161,22 +161,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
       isFullPaymentReceived
     };
 
+    const evenlyDistributedAdvance = isFullPaymentReceived
+      ? items.map(() => 0)
+      : distributeAdvanceAcrossItems(numericAdvance, items.length);
+
     const ordersToCreate: OrderFormData[] = items.map((item, index) => {
       const base = item.basePrice === '' ? 0 : item.basePrice;
       const qty = item.quantity === '' ? 1 : item.quantity;
       const sellingPrice = base + FIXED_CHARGE;
       const itemTotal = sellingPrice * qty;
-      
-      let itemAdvance = 0;
-      if (totals.totalSellingPrice > 0) {
-        if (index === items.length - 1) { 
-           itemAdvance = numericAdvance - distributedAdvance;
-        } else {
-           const ratio = itemTotal / totals.totalSellingPrice;
-           itemAdvance = Math.floor(numericAdvance * ratio);
-           distributedAdvance += itemAdvance;
-        }
-      }
+
+      let itemAdvance = evenlyDistributedAdvance[index] ?? 0;
 
       if (isFullPaymentReceived) {
         itemAdvance = itemTotal;

@@ -3,7 +3,7 @@ export type TransportMode = 'Bus' | 'Taxi' | 'Post' | 'Keep at Shop';
 
 export interface Order {
   id: string;
-  groupId?: string; 
+  groupId?: string;
   createdAt: number;
   batchName: string;
   customerName: string;
@@ -16,6 +16,7 @@ export interface Order {
   transportMode: TransportMode;
   note?: string;
   isFullPaymentReceived: boolean;
+  version?: number;
 }
 
 export type OrderFormData = Omit<Order, 'id' | 'createdAt'>;
@@ -25,6 +26,9 @@ export interface BatchCost {
   totalCostPrice: number;
   oatInputValue: number;
   deliveryFeeQuantity?: number;
+  isPacked?: boolean;
+  packedAt?: string | null;
+  version?: number;
 }
 
 export interface BatchSummary {
@@ -39,6 +43,8 @@ export interface BatchSummary {
   monthYear: string;
   oatInputValue: number;
   deliveryFeeQuantity: number;
+  isPacked?: boolean;
+  packedAt?: string | null;
 }
 
 export interface CustomerTrend {

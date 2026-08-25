@@ -11,12 +11,14 @@ interface OrderListProps {
   onAddMore: (order: Order) => void;
   onEditBatchCost?: (batchName: string) => void;
   onUpdateOrders: (orders: Order[]) => void;
+  onMoveCustomerOrders?: (orders: Order[], targetBatch: string) => void;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [batchFilter, setBatchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [batchMoveTarget, setBatchMoveTarget] = useState('');
   
   const [selectedCustomerKey, setSelectedCustomerKey] = useState<string | null>(null);
 
@@ -60,6 +62,14 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
     return [...group].sort((a, b) => b.createdAt - a.createdAt);
   }, [groupedOrdersMap, selectedCustomerKey]);
 
+  useEffect(() => {
+    if (!selectedGroupOrders || selectedGroupOrders.length === 0) {
+      setBatchMoveTarget('');
+      return;
+    }
+    setBatchMoveTarget(selectedGroupOrders[0].batchName || '');
+  }, [selectedGroupOrders]);
+
   // Aggregate unique notes for the selected customer
   const customerNotes = useMemo(() => {
     if (!selectedGroupOrders) return [];
@@ -82,6 +92,14 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
         };
     }, { totalQty: 0, totalSales: 0, totalAdvance: 0, totalRemaining: 0 });
   }, [selectedGroupOrders]);
+
+  const handleMoveCustomerOrders = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!selectedGroupOrders || !onMoveCustomerOrders) return;
+    if (!batchMoveTarget || !batchMoveTarget.trim()) return;
+    onMoveCustomerOrders(selectedGroupOrders, batchMoveTarget.trim());
+    setSelectedCustomerKey(null);
+  };
 
   const handleSingleDelete = (id: string, productName: string) => {
     if (window.confirm(`Are you sure you want to delete the record for "${productName}"?`)) {
@@ -270,6 +288,27 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Items</p>
                               <p className="text-xl font-bold text-slate-900">{customerTotals.totalQty} Units</p>
                           </div>
+                      </div>
+                      <div className="space-y-3 mb-4">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Move all orders for this customer to batch</label>
+                        <div className="flex gap-3">
+                          <select
+                            value={batchMoveTarget}
+                            onChange={(e) => setBatchMoveTarget(e.target.value)}
+                            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 bg-white text-slate-900 text-sm font-medium"
+                          >
+                            <option value="">Select batch</option>
+                            {Array.from(new Set(orders.map(o => o.batchName))).sort().reverse().map(batchName => (
+                              <option key={batchName} value={batchName}>{batchName}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={handleMoveCustomerOrders}
+                            className="px-5 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors text-xs uppercase tracking-widest"
+                          >
+                            Move Customer
+                          </button>
+                        </div>
                       </div>
                       <div className="flex gap-3">
                           <button 

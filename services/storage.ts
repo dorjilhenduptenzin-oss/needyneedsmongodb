@@ -1,136 +1,8 @@
 
 import { Order, BatchCost } from '../types';
-import { WEB_APP_URL } from '../constants';
-
-const isConfigured = () => {
-  return WEB_APP_URL && WEB_APP_URL.startsWith("https://script.google.com");
-};
-
-const orderToRow = (o: Order): any[] => [
-  String(o.id || '').trim(),
-  String(o.groupId || '').trim(),
-  o.createdAt || Date.now(),
-  String(o.batchName || '').trim(),
-  String(o.customerName || '').trim(),
-  String(o.address || '').trim(),
-  String(o.phoneNumber || '').trim(),
-  String(o.productName || '').trim(),
-  Number(o.sellingPrice || 0),
-  Number(o.quantity || 0),
-  Number(o.advancePaid || 0),
-  String(o.transportMode || 'Keep at Shop'),
-  Boolean(o.isFullPaymentReceived),
-  String(o.note || '').trim()
-];
-
-const rowToOrder = (row: any[]): Order | null => {
-  if (!row || row.length < 1 || !row[0]) return null;
-  
-  const parseBool = (val: any) => {
-    if (typeof val === 'boolean') return val;
-    const s = String(val).toUpperCase();
-    return s === 'TRUE' || s === 'YES' || val === 1 || val === '1';
-  };
-
-  return {
-    id: String(row[0]).trim(),
-    groupId: String(row[1] || '').trim(),
-    createdAt: !isNaN(Number(row[2])) ? Number(row[2]) : Date.now(),
-    batchName: String(row[3] || '').trim(),
-    customerName: String(row[4] || '').trim(),
-    address: String(row[5] || '').trim(),
-    phoneNumber: String(row[6] || '').trim(),
-    productName: String(row[7] || '').trim(),
-    sellingPrice: Number(row[8] || 0),
-    quantity: Number(row[9] || 0),
-    advancePaid: Number(row[10] || 0),
-    transportMode: (row[11] as any) || 'Keep at Shop',
-    isFullPaymentReceived: parseBool(row[12]),
-    note: row[13] && String(row[13]).trim() ? String(row[13]).trim() : undefined
-  };
-};
-
-export const loadDataFromSheets = async () => {
-  if (!isConfigured()) {
-    const localOrders = localStorage.getItem('nn_orders');
-    const localCosts = localStorage.getItem('nn_costs');
-    return {
-      orders: localOrders ? JSON.parse(localOrders) : [],
-      batchCosts: localCosts ? JSON.parse(localCosts) : []
-    };
-  }
-
-  try {
-    const url = `${WEB_APP_URL}?t=${Date.now()}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      redirect: 'follow'
-    });
-    
-    if (!response.ok) {
-        throw new Error("CLOUD_ACCESS_FAILED");
-    }
-    
-    const result = await response.json();
-    const orders = (result.orders || []).map(rowToOrder).filter((o: any) => o !== null);
-    const batchCosts = (result.costs || []).map((row: any[]) => ({
-      batchName: String(row[0] || '').trim(),
-      totalCostPrice: Number(row[1] || 0),
-      oatInputValue: Number(row[2] || 0),
-      deliveryFeeQuantity: row[3] !== undefined && row[3] !== "" ? Number(row[3]) : undefined
-    }));
-
-    return { orders, batchCosts };
-  } catch (error: any) {
-    console.error("Cloud Access Error:", error);
-    throw error;
-  }
-};
-
-export const syncOrdersToSheet = async (orders: Order[]) => {
-  if (!isConfigured()) return;
-  try {
-    await fetch(WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'syncOrders',
-        data: orders.map(orderToRow)
-      })
-    });
-  } catch (err) {
-    console.error("Orders sync interrupted:", err);
-  }
-};
-
-export const syncBatchCostsToSheet = async (costs: BatchCost[]) => {
-  if (!isConfigured()) return;
-  try {
-    await fetch(WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'syncCosts',
-        data: costs.map(c => [
-          String(c.batchName || '').trim(),
-          Number(c.totalCostPrice || 0),
-          Number(c.oatInputValue || 0),
-          c.deliveryFeeQuantity !== undefined ? Number(c.deliveryFeeQuantity) : ''
-        ])
-      })
-    });
-  } catch (err) {
-    console.error("Costs sync interrupted:", err);
-  }
-};
-
-// --- SUMMARY SHEET FUNCTIONS ---
 
 export interface SummaryEntry {
-  month: string; // YYYY-MM format
+  month: string;
   batches: string;
   totalSales: number;
   costPrice: number | null;
@@ -142,102 +14,183 @@ export interface SummaryEntry {
   savedAt: string;
 }
 
-export const saveSummaryEntry = async (entry: SummaryEntry) => {
-  if (!isConfigured()) return;
-  try {
-    const row = [
-      entry.month,
-      entry.batches,
-      entry.totalSales,
-      entry.costPrice ?? '',
-      entry.deliveryFee ?? '',
-      entry.oatPayment ?? '',
-      entry.fixedExpense ?? '',
-      entry.netProfit ?? '',
-      entry.isBatchClosed ? 'TRUE' : 'FALSE',
-      entry.savedAt
-    ];
+const API_BASE = '/api';
 
-    await fetch(WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'saveSummary',
-        data: row
-      })
-    });
-    console.log('Summary entry saved:', entry);
-  } catch (err) {
-    console.error("Summary save interrupted:", err);
+const normalizeOrder = (item: any): Order => ({
+  id: String(item.orderId || item.id || ''),
+  groupId: item.groupId || '',
+  createdAt: Number(item.createdAt ? new Date(item.createdAt).getTime() : Date.now()),
+  batchName: String(item.batchName || ''),
+  customerName: String(item.customerName || ''),
+  address: String(item.address || ''),
+  phoneNumber: String(item.phoneNumber || ''),
+  productName: String(item.productName || ''),
+  sellingPrice: Number(item.sellingPrice || 0),
+  quantity: Number(item.quantity || 0),
+  advancePaid: Number(item.advancePaid || 0),
+  transportMode: item.transportMode || 'Keep at Shop',
+  note: item.note || undefined,
+  isFullPaymentReceived: Boolean(item.isFullPaymentReceived)
+});
+
+const normalizeCost = (item: any): BatchCost => ({
+  batchName: String(item.batchName || ''),
+  totalCostPrice: Number(item.totalCostPrice || 0),
+  oatInputValue: Number(item.oatInputValue || 0),
+  deliveryFeeQuantity: item.deliveryFeeQuantity !== undefined && item.deliveryFeeQuantity !== null && item.deliveryFeeQuantity !== '' ? Number(item.deliveryFeeQuantity) : undefined,
+  isPacked: Boolean(item.isPacked),
+  packedAt: item.packedAt ? String(item.packedAt) : null,
+  version: Number.isInteger(Number(item.version)) ? Number(item.version) : undefined
+});
+
+const parseErrorMessage = async (response: Response, fallback: string) => {
+  try {
+    const payload = await response.json();
+    return payload?.error || payload?.message || fallback;
+  } catch {
+    return fallback;
   }
+};
+
+export const loadDataFromSheets = async () => {
+  const [ordersRes, costsRes] = await Promise.all([
+    fetch(`${API_BASE}/orders`),
+    fetch(`${API_BASE}/batchCosts`)
+  ]);
+
+  if (!ordersRes.ok || !costsRes.ok) {
+    throw new Error('Unable to load the latest data from the server.');
+  }
+
+  const orders = await ordersRes.json();
+  const costs = await costsRes.json();
+
+  return {
+    orders: (orders || []).map(normalizeOrder),
+    batchCosts: (costs || []).map(normalizeCost)
+  };
+};
+
+export const createOrder = async (order: Order) => {
+  const response = await fetch(`${API_BASE}/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...order, orderId: order.id, id: order.id })
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, 'Unable to create order.'));
+  }
+
+  const payload = await response.json();
+  return payload.order || order;
+};
+
+export const updateOrder = async (order: Order) => {
+  const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(order.id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...order, orderId: order.id, version: order.version || 1 })
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, 'Unable to update order.'));
+  }
+
+  const payload = await response.json();
+  return payload.order || order;
+};
+
+export const deleteOrder = async (orderId: string) => {
+  const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}`, {
+    method: 'DELETE'
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, 'Unable to delete order.'));
+  }
+
+  return response.json();
+};
+
+export const createBatchCost = async (cost: BatchCost) => {
+  const response = await fetch(`${API_BASE}/batchCosts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cost)
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, 'Unable to create batch cost.'));
+  }
+
+  const payload = await response.json();
+  return payload.batchCost || cost;
+};
+
+export const updateBatchCost = async (cost: BatchCost) => {
+  const response = await fetch(`${API_BASE}/batchCosts/${encodeURIComponent(cost.batchName)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...cost, version: cost.version ?? 1 })
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, 'Unable to update batch cost.'));
+  }
+
+  const payload = await response.json();
+  return payload.batchCost || cost;
+};
+
+export const syncOrdersToSheet = async (orders: Order[]) => {
+  if (!orders || !orders.length) {
+    return;
+  }
+
+  const [firstOrder] = orders;
+  if (!firstOrder || !firstOrder.id) {
+    return;
+  }
+
+  const order = await createOrder(firstOrder);
+  return order;
+};
+
+export const syncBatchCostsToSheet = async (costs: BatchCost[]) => {
+  if (!costs || !costs.length) {
+    return;
+  }
+
+  const [cost] = costs;
+  if (!cost || !cost.batchName) {
+    return;
+  }
+
+  const created = await createBatchCost(cost);
+  return created;
+};
+
+export const saveSummaryEntry = async (entry: SummaryEntry) => {
+  const response = await fetch(`${API_BASE}/summary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entry)
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, 'Unable to save summary.'));
+  }
+
+  return response.json();
 };
 
 export const upsertSummaryEntry = async (entry: SummaryEntry) => {
-  if (!isConfigured()) return;
-  try {
-    const row = [
-      entry.month,
-      entry.batches,
-      entry.totalSales,
-      entry.costPrice ?? '',
-      entry.deliveryFee ?? '',
-      entry.oatPayment ?? '',
-      entry.fixedExpense ?? '',
-      entry.netProfit ?? '',
-      entry.isBatchClosed ? 'TRUE' : 'FALSE',
-      entry.savedAt
-    ];
-
-    await fetch(WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'upsertSummary',
-        key: {
-          month: entry.month,
-          batches: entry.batches
-        },
-        data: row
-      })
-    });
-    console.log('Summary entry upserted:', entry);
-  } catch (err) {
-    console.error("Summary upsert interrupted:", err);
-  }
+  return saveSummaryEntry(entry);
 };
 
 export const loadSummaryEntries = async (): Promise<SummaryEntry[]> => {
-  if (!isConfigured()) return [];
-  try {
-    const url = `${WEB_APP_URL}?action=loadSummary&t=${Date.now()}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      redirect: 'follow'
-    });
-    
-    if (!response.ok) {
-      throw new Error("Failed to load summary data");
-    }
-    
-    const result = await response.json();
-    const entries: SummaryEntry[] = (result.summaries || []).map((row: any[]) => ({
-      month: String(row[0] || ''),
-      batches: String(row[1] || ''),
-      totalSales: Number(row[2] || 0),
-      costPrice: row[3] && row[3] !== '' ? Number(row[3]) : null,
-      deliveryFee: row[4] && row[4] !== '' ? Number(row[4]) : null,
-      oatPayment: row[5] && row[5] !== '' ? Number(row[5]) : null,
-      fixedExpense: Number(row[6] || 0),
-      netProfit: Number(row[7] || 0),
-      isBatchClosed: String(row[8] || '').toUpperCase() === 'TRUE',
-      savedAt: String(row[9] || new Date().toISOString())
-    }));
-    return entries;
-  } catch (error: any) {
-    console.error("Error loading summary entries:", error);
-    return [];
-  }
+  const response = await fetch(`${API_BASE}/summary`);
+  if (!response.ok) throw new Error('Summary load failed');
+  return await response.json();
 };

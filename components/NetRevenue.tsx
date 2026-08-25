@@ -18,9 +18,12 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [startBatch, setStartBatch] = useState('');
   const [endBatch, setEndBatch] = useState('');
+  const [salaryDeduction, setSalaryDeduction] = useState(50000);
+  const [localDeliveryFee, setLocalDeliveryFee] = useState(0);
+  const [otherExpense, setOtherExpense] = useState(0);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-  const FIXED_EXPENSE = 30000;
+  const FIXED_EXPENSE = 50000;
 
   // Get all unique batches
   const uniqueBatches = useMemo(() => {
@@ -126,12 +129,15 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
     const cost = deductions.allClosed ? deductions.totalCostPrice : 0;
     const delivery = deductions.allClosed ? deductions.totalDelivery : 0;
     const oat = deductions.allClosed ? deductions.totalOat : 0;
-    
-    const totalDeductions = cost + delivery + oat + (deductions.allClosed ? FIXED_EXPENSE : 0);
-    const netProfit = deductions.allClosed ? sales - totalDeductions : null;
+    const otherLocalDelivery = localDeliveryFee;
+    const otherExpenseValue = otherExpense;
+    const salaryExpense = salaryDeduction;
 
-    return { sales, cost, delivery, oat, totalDeductions, netProfit };
-  }, [monthlyStats, deductions]);
+    const totalDeductions = cost + delivery + oat + salaryExpense + otherLocalDelivery + otherExpenseValue;
+    const netProfit = sales - totalDeductions;
+
+    return { sales, cost, delivery, oat, salaryExpense, otherLocalDelivery, otherExpenseValue, totalDeductions, netProfit };
+  }, [monthlyStats, deductions, salaryDeduction, localDeliveryFee, otherExpense]);
 
   const handleSaveData = async () => {
     const monthYearStr = `${selectedYear}-${selectedMonth}`;
@@ -142,14 +148,14 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
       costPrice: deductions.allClosed ? deductions.totalCostPrice : null,
       deliveryFee: deductions.allClosed ? deductions.totalDelivery : null,
       oatPayment: deductions.allClosed ? deductions.totalOat : null,
-      fixedExpense: deductions.allClosed ? FIXED_EXPENSE : null,
-      netProfit: deductions.allClosed ? profitCalculation.netProfit : null,
+      fixedExpense: salaryDeduction + localDeliveryFee + otherExpense,
+      netProfit: profitCalculation.netProfit,
       isBatchClosed: deductions.allClosed,
       savedAt: new Date().toISOString()
     };
     
     await upsertSummaryEntry(summaryData);
-    setSaveMessage('✓ Summary saved to Google Sheets');
+    setSaveMessage('✓ Summary saved to MongoDB');
     setTimeout(() => setSaveMessage(null), 3000);
     
     if (onUpdateSummary) {
@@ -254,7 +260,7 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
           </div>
         )}
 
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Deductions (From Financial Reports)</h3>
+        <h3 className="text-lg font-semibold text-slate-800 mb-4">Deductions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
             <p className="text-xs font-bold text-slate-500 uppercase">Cost Price</p>
@@ -278,10 +284,39 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
           </div>
         </div>
 
-        <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-          <p className="text-sm text-slate-700">
-            <span className="font-semibold">Fixed Monthly Expense:</span> <span className="font-bold text-slate-900">BTN {FIXED_EXPENSE.toLocaleString()}</span>
-          </p>
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Salary</label>
+            <input
+              type="number"
+              min="0"
+              value={salaryDeduction}
+              onChange={(e) => setSalaryDeduction(Number(e.target.value) || 0)}
+              className={selectClasses}
+            />
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Other Local Delivery Fee</label>
+            <input
+              type="number"
+              min="0"
+              value={localDeliveryFee}
+              onChange={(e) => setLocalDeliveryFee(Number(e.target.value) || 0)}
+              className={selectClasses}
+            />
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Other Expense</label>
+            <input
+              type="number"
+              min="0"
+              value={otherExpense}
+              onChange={(e) => setOtherExpense(Number(e.target.value) || 0)}
+              className={selectClasses}
+            />
+          </div>
         </div>
       </div>
 
@@ -313,17 +348,23 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
           )}
           
           <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-300">Fixed Monthly Expense</span>
-            <span className={`font-semibold ${deductions.allClosed ? 'text-rose-400' : 'text-slate-400'}`}>
-              {deductions.allClosed ? `- BTN ${FIXED_EXPENSE.toLocaleString()}` : '—'}
-            </span>
+            <span className="text-slate-300">Salary</span>
+            <span className="font-semibold text-rose-400">- BTN {profitCalculation.salaryExpense.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-300">Other Local Delivery Fee</span>
+            <span className="font-semibold text-rose-400">- BTN {profitCalculation.otherLocalDelivery.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-300">Other Expense</span>
+            <span className="font-semibold text-rose-400">- BTN {profitCalculation.otherExpenseValue.toLocaleString()}</span>
           </div>
           
           <div className="h-px bg-slate-700"></div>
           <div className="flex justify-between items-center text-lg pt-2">
             <span className="font-bold">Net Profit</span>
-            <span className={`text-2xl font-bold ${profitCalculation.netProfit !== null && profitCalculation.netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {profitCalculation.netProfit !== null ? `BTN ${profitCalculation.netProfit.toLocaleString()}` : '—'}
+            <span className={`text-2xl font-bold ${profitCalculation.netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              BTN {profitCalculation.netProfit.toLocaleString()}
             </span>
           </div>
         </div>

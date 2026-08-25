@@ -16,16 +16,20 @@ interface BatchAnalyticsProps {
 export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCosts, onUpdateBatchCost, initialEditBatch }) => {
   const [viewMode, setViewMode] = useState<'batch' | 'monthly' | 'trends'>('batch');
   const [editingBatch, setEditingBatch] = useState<string | null>(null);
+  const [editingBatchVersion, setEditingBatchVersion] = useState<number | undefined>(undefined);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+  const [editingBatchPackedAt, setEditingBatchPackedAt] = useState<string | null>(null);
   
   const [editForm, setEditForm] = useState<{
     costPrice: number | '';
     oatInput: number | '';
     deliveryFeeQty: number | '';
+    isPacked: boolean;
   }>({
     costPrice: '',
     oatInput: '',
-    deliveryFeeQty: ''
+    deliveryFeeQty: '',
+    isPacked: false
   });
 
   useEffect(() => {
@@ -40,7 +44,7 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
     });
 
     return Object.entries(batches).map(([name, batchOrders]) => {
-      const costConfig = batchCosts.find(c => c.batchName === name) || { totalCostPrice: 0, oatInputValue: 0, deliveryFeeQuantity: undefined };
+      const costConfig = batchCosts.find(c => c.batchName === name) || { totalCostPrice: 0, oatInputValue: 0, deliveryFeeQuantity: undefined, isPacked: false, packedAt: null };
       const totalItems = batchOrders.reduce((acc, o) => acc + o.quantity, 0);
       const totalSales = batchOrders.reduce((acc, o) => acc + (o.sellingPrice * o.quantity), 0);
       
@@ -64,9 +68,11 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
         netProfit,
         monthYear,
         oatInputValue: costConfig.oatInputValue || 0,
-        deliveryFeeQuantity: finalDeliveryQty
-      } as BatchSummary;
-    }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
+        deliveryFeeQuantity: finalDeliveryQty,
+        isPacked: Boolean(costConfig.isPacked),
+        packedAt: costConfig.packedAt || null
+      } as BatchSummary & { isPacked: boolean; packedAt: string | null };
+    }).sort((a, b) => Number(a.isPacked) - Number(b.isPacked) || b.monthYear.localeCompare(a.monthYear));
   }, [orders, batchCosts]);
 
   const monthlyData = useMemo(() => {
@@ -90,23 +96,35 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
   const handleEditClick = (batch: BatchSummary) => {
     setEditingBatch(batch.batchName);
     const storedCost = batchCosts.find(c => c.batchName === batch.batchName);
+    setEditingBatchPackedAt(storedCost?.packedAt || null);
+    setEditingBatchVersion(storedCost?.version ?? 1);
     setEditForm({
       costPrice: storedCost?.totalCostPrice || '',
       oatInput: storedCost?.oatInputValue || '',
-      deliveryFeeQty: storedCost?.deliveryFeeQuantity !== undefined ? storedCost.deliveryFeeQuantity : batch.totalItems
+      deliveryFeeQty: storedCost?.deliveryFeeQuantity !== undefined ? storedCost.deliveryFeeQuantity : batch.totalItems,
+      isPacked: Boolean(storedCost?.isPacked)
     });
   };
 
   const handleSaveCost = () => {
     if (editingBatch) {
+      const packedAt = editForm.isPacked ? (editingBatchPackedAt || new Date().toISOString()) : null;
+
       onUpdateBatchCost({
         batchName: editingBatch,
         totalCostPrice: editForm.costPrice === '' ? 0 : editForm.costPrice,
         oatInputValue: editForm.oatInput === '' ? 0 : editForm.oatInput,
-        deliveryFeeQuantity: editForm.deliveryFeeQty === '' ? 0 : editForm.deliveryFeeQty
+        deliveryFeeQuantity: editForm.deliveryFeeQty === '' ? 0 : editForm.deliveryFeeQty,
+        isPacked: editForm.isPacked,
+        packedAt,
+        version: editingBatchVersion ?? 1
       });
       setSaveStatus('success');
-      setTimeout(() => setEditingBatch(null), 1200);
+      setTimeout(() => {
+        setEditingBatch(null);
+        setEditingBatchPackedAt(null);
+        setEditingBatchVersion(undefined);
+      }, 1200);
     }
   };
 
@@ -169,6 +187,21 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
                     <input type="number" min="0" value={editForm.oatInput} onChange={(e) => setEditForm(prev => ({ ...prev, oatInput: e.target.value === '' ? '' : parseFloat(e.target.value) }))} className={inputClasses} />
                   </div>
 
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <label className="flex items-center justify-between gap-3 cursor-pointer">
+                      <div>
+                        <div className="text-xs font-bold uppercase tracking-widest text-slate-500">Batch Status</div>
+                        <div className="text-sm text-slate-700 mt-1">{editForm.isPacked ? 'Packed and ready to ignore in the queue' : 'Still pending / not packed yet'}</div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={editForm.isPacked}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, isPacked: e.target.checked }))}
+                        className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                    </label>
+                  </div>
+
                   <div className="pt-4 flex gap-3">
                     <button onClick={() => setEditingBatch(null)} className="flex-1 py-3 text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-50 rounded-xl transition-all">Cancel</button>
                     <button onClick={handleSaveCost} className="flex-1 py-3 bg-indigo-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-100"><Save size={14} /> Update</button>
@@ -198,6 +231,7 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
             <thead className="bg-slate-50/50 border-b border-slate-100">
               <tr>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">{viewMode === 'batch' ? 'Reference' : 'Month'}</th>
+                <th className="px-4 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-4 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Orders</th>
                 <th className="px-4 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Delivery Qty</th>
                 <th className="px-6 py-4 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50/20">Sales</th>
@@ -210,6 +244,11 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
               {displayData.map((row, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 text-sm font-bold text-slate-900 font-serif">{viewMode === 'batch' ? row.batchName : row.monthYear}</td>
+                  <td className="px-4 py-4 text-center">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${row.isPacked ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
+                      {row.isPacked ? 'Packed' : 'Pending'}
+                    </span>
+                  </td>
                   <td className="px-4 py-4 text-sm text-center font-semibold text-slate-500">{row.orderCount}</td>
                   <td className="px-4 py-4 text-sm text-center font-semibold text-slate-500">{row.deliveryFeeQuantity}</td>
                   <td className="px-6 py-4 text-sm text-right font-bold text-emerald-600">BTN {row.totalSales.toLocaleString()}</td>

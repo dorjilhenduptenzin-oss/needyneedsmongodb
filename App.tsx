@@ -1,21 +1,22 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, AlertTriangle, CloudOff, Cloud, ShieldCheck, Lock, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp } from 'lucide-react';
 import { Order, OrderFormData, BatchCost } from './types';
-import { APP_VIEWS, AppView, APP_NAME, WEB_APP_URL, BUILD_VERSION } from './constants';
+import { APP_VIEWS, AppView, APP_NAME, BUILD_VERSION } from './constants';
 import { 
-  loadDataFromSheets, 
-  syncOrdersToSheet, 
-  syncBatchCostsToSheet 
+  loadDataFromSheets,
+  createOrder,
+  updateOrder,
+  deleteOrder,
+  createBatchCost,
+  updateBatchCost,
+  saveSummaryEntry
 } from './services/storage';
 import { Dashboard } from './components/Dashboard';
 import { OrderForm } from './components/OrderForm';
 import { OrderList } from './components/OrderList';
 import { BatchAnalytics } from './components/BatchAnalytics';
 import { NetRevenue } from './components/NetRevenue';
-import { Admin } from './components/Admin';
-
-const ADMIN_PASSWORD = "Ghost006*";
 
 const generateId = () => {
   try {
@@ -26,13 +27,13 @@ const generateId = () => {
 };
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<AppView | 'admin'>(APP_VIEWS.DASHBOARD);
+  const [currentView, setCurrentView] = useState<AppView>(APP_VIEWS.DASHBOARD);
   const [orders, setOrders] = useState<Order[]>([]);
   const [batchCosts, setBatchCosts] = useState<BatchCost[]>([]);
 
   const ordersRef = useRef<Order[]>([]);
   const costsRef = useRef<BatchCost[]>([]);
-  
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [customerContext, setCustomerContext] = useState<Partial<Order> | null>(null);
@@ -40,13 +41,6 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [batchToEditInAnalytics, setBatchToEditInAnalytics] = useState<string | null>(null);
-  
-  // Admin Protection
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
-
-  const isConfigured = WEB_APP_URL && WEB_APP_URL.startsWith("https://script.google.com");
 
   useEffect(() => { ordersRef.current = orders; }, [orders]);
   useEffect(() => { costsRef.current = batchCosts; }, [batchCosts]);
@@ -61,47 +55,25 @@ export default function App() {
         if (data.batchCosts) setBatchCosts(data.batchCosts);
       } catch (err: any) {
         console.error("Initial load failed:", err);
-        setSyncError(err.message || 'Connection Blocked');
-        const localOrders = localStorage.getItem('nn_orders');
-        const localCosts = localStorage.getItem('nn_costs');
-        if (localOrders) setOrders(JSON.parse(localOrders));
-        if (localCosts) setBatchCosts(JSON.parse(localCosts));
+        setSyncError(err?.message || 'Unable to connect to the server.');
       } finally {
         setIsLoading(false);
       }
     };
     init();
-  }, [isConfigured]);
+  }, []);
 
-  const triggerCloudSync = useCallback(async (currentOrders: Order[], currentCosts: BatchCost[]) => {
-    if (!isConfigured) {
-      localStorage.setItem('nn_orders', JSON.stringify(currentOrders));
-      localStorage.setItem('nn_costs', JSON.stringify(currentCosts));
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      await syncOrdersToSheet(currentOrders);
-      await syncBatchCostsToSheet(currentCosts);
-      setSyncError(null);
-      localStorage.setItem('nn_orders', JSON.stringify(currentOrders));
-      localStorage.setItem('nn_costs', JSON.stringify(currentCosts));
-    } catch (err) {
-      console.error("Sync failed:", err);
-      setSyncError("Cloud Sync Pending");
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [isConfigured]);
+  const triggerCloudSync = useCallback(async (_currentOrders: Order[], _currentCosts: BatchCost[]) => {
+    return;
+  }, []);
 
   useEffect(() => {
     if (isLoading) return;
     const timer = setTimeout(() => {
-      triggerCloudSync(orders, batchCosts);
-    }, 2000);
+      setSyncError(null);
+    }, 0);
     return () => clearTimeout(timer);
-  }, [orders, batchCosts, isLoading, triggerCloudSync]);
+  }, [orders, batchCosts, isLoading]);
 
   const refreshData = async () => {
     setIsSyncing(true);
@@ -111,63 +83,74 @@ export default function App() {
       if (data.orders) setOrders(data.orders);
       if (data.batchCosts) setBatchCosts(data.batchCosts);
     } catch (err: any) {
-      setSyncError(err.message || 'Refresh failed');
+      setSyncError(err?.message || 'Unable to connect to the server. Your changes have not been saved.');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const verifyPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
-      setCurrentView('admin');
-      setShowPasswordPrompt(false);
-      setPasswordInput("");
-      setPasswordError(false);
-      setIsMobileMenuOpen(false);
-    } else {
-      setPasswordError(true);
+  const handleCreateOrUpdateOrder = async (data: OrderFormData | OrderFormData[]) => {
+    try {
+      setIsSyncing(true);
+      setSyncError(null);
+
+      const items = Array.isArray(data) ? data : [data];
+      const saveResults: Order[] = [];
+
+      for (const item of items) {
+        const order: Order = {
+          ...item,
+          id: editingOrder?.id || generateId(),
+          createdAt: editingOrder?.createdAt || Date.now(),
+          groupId: editingOrder?.groupId || generateId(),
+          version: editingOrder?.version || 1
+        } as Order;
+
+        const persisted = editingOrder ? await updateOrder(order) : await createOrder(order);
+        saveResults.push(persisted as Order);
+      }
+
+      setOrders(prev => {
+        let next = [...prev];
+        if (editingOrder) {
+          const eid = String(editingOrder.id).trim();
+          next = next.map(o => String(o.id).trim() === eid ? saveResults[0] : o);
+        } else {
+          next = [...saveResults, ...next];
+        }
+        return next;
+      });
+
+      setEditingOrder(null);
+      setCustomerContext(null);
+      setCurrentView(APP_VIEWS.ORDER_LIST);
+    } catch (error: any) {
+      setSyncError(error?.message || 'Unable to save order. The change has not been confirmed.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const handleCreateOrUpdateOrder = (data: OrderFormData | OrderFormData[]) => {
-    setOrders(prev => {
-      let next = [...prev];
-      if (editingOrder) {
-        const eid = String(editingOrder.id).trim();
-        if (Array.isArray(data)) {
-          const gid = editingOrder.groupId || generateId();
-          const firstItem = data[0];
-          const rest = data.slice(1);
-          next = next.map(o => String(o.id).trim() === eid ? { ...firstItem, id: editingOrder.id, createdAt: editingOrder.createdAt, groupId: gid } : o);
-          const newOnes: Order[] = rest.map(d => ({ ...d, id: generateId(), groupId: gid, createdAt: Date.now() }));
-          next = [...newOnes, ...next];
-        } else {
-          next = next.map(o => String(o.id).trim() === eid ? { ...data, id: editingOrder.id, createdAt: editingOrder.createdAt, groupId: editingOrder.groupId } : o);
-        }
-      } else {
-        if (Array.isArray(data)) {
-          const gid = generateId();
-          const newOnes: Order[] = data.map(d => ({ ...d, id: generateId(), groupId: gid, createdAt: Date.now() }));
-          next = [...newOnes, ...next];
-        } else {
-          next = [{ ...data, id: generateId(), createdAt: Date.now() }, ...next];
-        }
-      }
-      return next;
-    });
-    setEditingOrder(null);
-    setCustomerContext(null);
-    setCurrentView(APP_VIEWS.ORDER_LIST);
-  };
-
-  const handleDeleteOrder = (idOrIds: string | string[]) => {
+  const handleDeleteOrder = async (idOrIds: string | string[]) => {
     const idsToKill = Array.isArray(idOrIds) 
       ? idOrIds.map(id => String(id).trim()) 
       : [String(idOrIds).trim()];
-    
-    const killSet = new Set(idsToKill);
-    setOrders(prev => prev.filter(order => !killSet.has(String(order.id).trim())));
+
+    try {
+      setIsSyncing(true);
+      setSyncError(null);
+
+      for (const id of idsToKill) {
+        await deleteOrder(id);
+      }
+
+      const killSet = new Set(idsToKill);
+      setOrders(prev => prev.filter(order => !killSet.has(String(order.id).trim())));
+    } catch (error: any) {
+      setSyncError(error?.message || 'Unable to delete order. The change has not been confirmed.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleBulkUpdateOrders = (updatedList: Order[]) => {
@@ -177,28 +160,60 @@ export default function App() {
     });
   };
 
-  const handleUpdateBatchCost = (cost: BatchCost) => {
-    setBatchCosts(prev => {
-      const next = [...prev];
-      const idx = next.findIndex(c => c.batchName === cost.batchName);
-      if (idx >= 0) next[idx] = cost; else next.push(cost);
-      return next;
-    });
-    setBatchToEditInAnalytics(null);
+  const handleMoveCustomerOrders = async (ordersToMove: Order[], targetBatch: string) => {
+    if (!ordersToMove.length || !targetBatch || !targetBatch.trim()) {
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      setSyncError(null);
+
+      const updatedOrders: Order[] = [];
+      for (const order of ordersToMove) {
+        const nextOrder = { ...order, batchName: targetBatch.trim(), version: order.version || 1 };
+        const persisted = await updateOrder(nextOrder);
+        updatedOrders.push(persisted as Order);
+      }
+
+      setOrders(prev => {
+        const updates = new Map(updatedOrders.map(o => [String(o.id).trim(), o]));
+        return prev.map(o => updates.has(String(o.id).trim()) ? updates.get(String(o.id).trim())! : o);
+      });
+    } catch (error: any) {
+      setSyncError(error?.message || 'Unable to move the customer orders to the new batch.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  const NavItem = ({ view, icon: Icon, label, isAdmin = false }: { view: any, icon: any, label: string, isAdmin?: boolean }) => (
+  const handleUpdateBatchCost = async (cost: BatchCost) => {
+    try {
+      setIsSyncing(true);
+      setSyncError(null);
+      const persisted = await updateBatchCost(cost);
+      setBatchCosts(prev => {
+        const next = [...prev];
+        const idx = next.findIndex(c => c.batchName === cost.batchName);
+        if (idx >= 0) next[idx] = persisted as BatchCost; else next.push(persisted as BatchCost);
+        return next;
+      });
+    } catch (error: any) {
+      setSyncError(error?.message || 'Unable to save batch cost. The change has not been confirmed.');
+    } finally {
+      setIsSyncing(false);
+      setBatchToEditInAnalytics(null);
+    }
+  };
+
+  const NavItem = ({ view, icon: Icon, label }: { view: any, icon: any, label: string }) => (
     <button
       onClick={() => {
-        if (isAdmin) {
-          setShowPasswordPrompt(true);
-        } else {
-          setCurrentView(view);
-          setEditingOrder(null);
-          setCustomerContext(null);
-          setBatchToEditInAnalytics(null);
-          setIsMobileMenuOpen(false);
-        }
+        setCurrentView(view);
+        setEditingOrder(null);
+        setCustomerContext(null);
+        setBatchToEditInAnalytics(null);
+        setIsMobileMenuOpen(false);
       }}
       className={`flex items-center gap-3 w-full px-5 py-3.5 rounded-xl transition-all duration-200 font-semibold text-sm ${currentView === view ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 translate-x-1' : 'text-slate-500 hover:bg-white hover:text-slate-900'}`}
     >
@@ -234,9 +249,6 @@ export default function App() {
           <NavItem view={APP_VIEWS.ORDER_LIST} icon={List} label="All Orders" />
           <NavItem view={APP_VIEWS.BATCH_ANALYTICS} icon={PieChart} label="Financial Reports" />
           <NavItem view={APP_VIEWS.NET_REVENUE} icon={TrendingUp} label="Net Revenue" />
-          <div className="pt-4 border-t border-slate-200/40 mt-4">
-             <NavItem view="admin" icon={ShieldCheck} label="System Admin" isAdmin />
-          </div>
         </nav>
         
         <div className="mt-auto pt-8 border-t border-slate-200/60 space-y-5">
@@ -252,7 +264,7 @@ export default function App() {
                ) : (
                  <div className={`font-bold text-xs flex items-center gap-2 ${syncError ? 'text-rose-600' : 'text-slate-900'}`}>
                    {syncError ? <CloudOff size={14} /> : <Cloud size={14} />}
-                   {syncError ? 'Local Mode' : 'Cloud Synchronized'}
+                   {syncError ? 'Live DB Unavailable' : 'Live MongoDB'}
                  </div>
                )}
            </div>
@@ -279,7 +291,6 @@ export default function App() {
                 {currentView === APP_VIEWS.ORDER_LIST && 'Inventory Database'}
                 {currentView === APP_VIEWS.BATCH_ANALYTICS && 'Performance Analytics'}
                 {currentView === APP_VIEWS.NET_REVENUE && 'Net Revenue Analysis'}
-                {currentView === 'admin' && 'Cloud Infrastructure'}
               </h1>
           </div>
           <button className="md:hidden p-3 bg-white shadow-sm border border-slate-100 rounded-xl text-slate-900" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -298,69 +309,11 @@ export default function App() {
             setEditingOrder(null); 
             setCustomerContext(null); 
           }} />}
-          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} />}
+          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
           {currentView === APP_VIEWS.BATCH_ANALYTICS && <BatchAnalytics orders={orders} batchCosts={batchCosts} onUpdateBatchCost={handleUpdateBatchCost} initialEditBatch={batchToEditInAnalytics} />}
           {currentView === APP_VIEWS.NET_REVENUE && <NetRevenue orders={orders} batchCosts={batchCosts} />}
-          {currentView === 'admin' && <Admin />}
         </div>
       </main>
-
-      {/* Security Checkpoint */}
-      {showPasswordPrompt && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 animate-in zoom-in-95 duration-200 border border-slate-100">
-              <div className="flex flex-col items-center text-center mb-8">
-                 <div className="w-16 h-16 bg-slate-50 text-slate-900 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                    <Lock size={24} />
-                 </div>
-                 <h2 className="text-xl font-bold text-slate-900 font-serif">Admin Authentication</h2>
-                 <p className="text-xs text-slate-500 font-medium mt-1">Please enter your secure access key</p>
-              </div>
-
-              <form onSubmit={verifyPassword} className="space-y-4">
-                 <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Access Key</label>
-                    <input 
-                       autoFocus
-                       type="password"
-                       value={passwordInput}
-                       onChange={(e) => {
-                         setPasswordInput(e.target.value);
-                         setPasswordError(false);
-                       }}
-                       className={`w-full px-5 py-3 rounded-xl border outline-none transition-all font-mono tracking-widest text-sm ${passwordError ? 'border-rose-500 bg-rose-50 ring-4 ring-rose-100' : 'border-slate-200 focus:border-slate-900 focus:ring-4 focus:ring-slate-100 bg-slate-50'}`}
-                       placeholder="••••••••"
-                    />
-                    {passwordError && (
-                      <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest mt-2 flex items-center gap-1">
-                        <AlertTriangle size={10} /> Authentication Failed
-                      </p>
-                    )}
-                 </div>
-
-                 <div className="flex gap-3 pt-2">
-                    <button 
-                       type="button"
-                       onClick={() => {
-                         setShowPasswordPrompt(false);
-                         setPasswordInput("");
-                         setPasswordError(false);
-                       }}
-                       className="flex-1 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-50 rounded-xl transition-all"
-                    >
-                       Back
-                    </button>
-                    <button 
-                       type="submit"
-                       className="flex-1 py-3 bg-slate-900 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
-                    >
-                       Authorize
-                    </button>
-                 </div>
-              </form>
-           </div>
-        </div>
-      )}
     </div>
   );
 }

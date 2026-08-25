@@ -1,13 +1,6 @@
 
-export const APP_NAME = "NeedyNeeds Inventory"; 
-export const BUILD_VERSION = "4.6.0 (Cloud)";
-
-/**
- * GOOGLE_SHEET_WEB_APP_URL:
- * Deployment URL for the Apps Script Bridge.
- */
-export const WEB_APP_URL: string = "https://script.google.com/macros/s/AKfycby2f6wXVE4xfsIP19dmzLR-K5v-XUwQOyH9J25Tm1HFZBb0tUa4IPW5xQ0p4FSStbm-/exec";
-export const DEPLOYMENT_ID: string = "AKfycby2f6wXVE4xfsIP19dmzLR-K5v-XUwQOyH9J25Tm1HFZBb0tUa4IPW5xQ0p4FSStbm-";
+export const APP_NAME = "NeedyNeeds Inventory";
+export const BUILD_VERSION = "4.6.0";
 
 export const DELIVERY_FEE_PER_ITEM = 100;
 export const OAT_RATE = 28;
