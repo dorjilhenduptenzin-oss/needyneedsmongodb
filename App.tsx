@@ -208,14 +208,29 @@ export default function App() {
     try {
       setIsSyncing(true);
       setSyncError(null);
-      const persisted = await updateBatchCost(cost);
-      setBatchCosts(prev => {
-        const next = [...prev];
-        const idx = next.findIndex(c => c.batchName === cost.batchName);
-        if (idx >= 0) next[idx] = persisted as BatchCost; else next.push(persisted as BatchCost);
-        return next;
-      });
-      setSyncMessage('Batch cost updated successfully');
+
+      let persisted: BatchCost | null = null;
+      try {
+        persisted = await updateBatchCost(cost);
+      } catch (err: any) {
+        const msg = (err && err.message) ? String(err.message) : String(err || '');
+        // If server reports not found, attempt to create instead
+        if (msg.toLowerCase().includes('not found')) {
+          persisted = await createBatchCost(cost);
+        } else {
+          throw err;
+        }
+      }
+
+      if (persisted) {
+        setBatchCosts(prev => {
+          const next = [...prev];
+          const idx = next.findIndex(c => c.batchName === cost.batchName);
+          if (idx >= 0) next[idx] = persisted as BatchCost; else next.push(persisted as BatchCost);
+          return next;
+        });
+        setSyncMessage('Batch cost saved successfully');
+      }
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to save batch cost. The change has not been confirmed.');
     } finally {
