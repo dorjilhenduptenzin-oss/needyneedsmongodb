@@ -72,6 +72,15 @@ export const loadDataFromSheets = async () => {
   };
 };
 
+export const loadBatchCosts = async () => {
+  const response = await fetch(`${API_BASE}/batchCosts`);
+  if (!response.ok) {
+    throw new Error('Unable to load batch costs.');
+  }
+  const costs = await response.json();
+  return (costs || []).map(normalizeCost);
+};
+
 export const createOrder = async (order: Order) => {
   const response = await fetch(`${API_BASE}/orders`, {
     method: 'POST',

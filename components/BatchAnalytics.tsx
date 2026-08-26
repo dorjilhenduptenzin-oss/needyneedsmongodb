@@ -106,11 +106,12 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
     });
   };
 
-  const handleSaveCost = () => {
-    if (editingBatch) {
-      const packedAt = editForm.isPacked ? (editingBatchPackedAt || new Date().toISOString()) : null;
+  const handleSaveCost = async () => {
+    if (!editingBatch) return;
+    const packedAt = editForm.isPacked ? (editingBatchPackedAt || new Date().toISOString()) : null;
 
-      onUpdateBatchCost({
+    try {
+      await onUpdateBatchCost({
         batchName: editingBatch,
         totalCostPrice: editForm.costPrice === '' ? 0 : editForm.costPrice,
         oatInputValue: editForm.oatInput === '' ? 0 : editForm.oatInput,
@@ -125,6 +126,10 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
         setEditingBatchPackedAt(null);
         setEditingBatchVersion(undefined);
       }, 1200);
+    } catch (err: any) {
+      // show error inline
+      setSaveStatus('idle');
+      alert(err?.message || 'Unable to save batch cost');
     }
   };
 

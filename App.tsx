@@ -3,12 +3,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp } from 'lucide-react';
 import { Order, OrderFormData, BatchCost } from './types';
 import { APP_VIEWS, AppView, APP_NAME, BUILD_VERSION } from './constants';
-import { 
+import {
   loadDataFromSheets,
   createOrder,
   updateOrder,
   deleteOrder,
   createBatchCost,
+  loadBatchCosts,
   updateBatchCost,
   saveSummaryEntry
 } from './services/storage';
@@ -223,12 +224,22 @@ export default function App() {
       }
 
       if (persisted) {
+        // Update local cache and then refresh from server to ensure version consistency
         setBatchCosts(prev => {
           const next = [...prev];
           const idx = next.findIndex(c => c.batchName === cost.batchName);
           if (idx >= 0) next[idx] = persisted as BatchCost; else next.push(persisted as BatchCost);
           return next;
         });
+
+        try {
+          const fresh = await loadBatchCosts();
+          setBatchCosts(fresh);
+        } catch (e) {
+          // If refresh fails, keep optimistic update but log
+          console.error('Failed to refresh batch costs after save', e);
+        }
+
         setSyncMessage('Batch cost saved successfully');
       }
     } catch (error: any) {
