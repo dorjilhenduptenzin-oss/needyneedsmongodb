@@ -9,7 +9,7 @@ interface OrderFormProps {
   initialData?: OrderFormData;
   customerContext?: Partial<Order>;
   existingBatches: string[];
-  onSubmit: (data: OrderFormData | OrderFormData[]) => void;
+  onSubmit: (data: OrderFormData | OrderFormData[]) => Promise<any> | void;
   onCancel: () => void;
 }
 
@@ -21,6 +21,7 @@ interface OrderItem {
 }
 
 export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerContext, existingBatches, onSubmit, onCancel }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -154,8 +155,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const numericAdvance = advancePaid === '' ? 0 : advancePaid;
     const commonData = {
@@ -192,10 +195,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
       };
     });
 
-    if (isMultiItem || items.length > 1) {
-      onSubmit(ordersToCreate as any); 
-    } else {
-      onSubmit(ordersToCreate[0]);
+    try {
+      const payload = (isMultiItem || items.length > 1) ? (ordersToCreate as any) : ordersToCreate[0];
+      const maybe = onSubmit(payload as any);
+      if (maybe && typeof (maybe as any).then === 'function') {
+        await maybe;
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -466,7 +473,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
           </button>
           <button
             type="submit"
-            className="flex-[2] px-6 py-3 rounded-xl bg-rose-600 text-white font-medium hover:bg-rose-700 shadow-lg shadow-rose-200 transition-all flex justify-center items-center gap-2"
+            disabled={isSubmitting}
+            className={`flex-[2] px-6 py-3 rounded-xl bg-rose-600 text-white font-medium transition-all flex justify-center items-center gap-2 ${isSubmitting ? 'opacity-60 pointer-events-none' : 'hover:bg-rose-700 shadow-lg shadow-rose-200'}`}
           >
             <Save size={20} />
             {initialData ? 'Update Order' : `Save ${items.length > 1 ? `All ${items.length} Orders` : 'Order'}`}
