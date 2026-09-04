@@ -3,8 +3,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Order, BatchSummary, BatchCost, CustomerTrend } from '../types';
 import { DELIVERY_FEE_PER_ITEM, OAT_RATE, APP_NAME } from '../constants';
 import { Download, Edit3, X, Save, CheckCircle, PieChart, Wallet, BarChart3, Users } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface BatchAnalyticsProps {
   orders: Order[];
@@ -133,12 +131,28 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
     }
   };
 
-  const handleDownloadPDF = () => {
-    const doc = new jsPDF();
-    const tableColumn = ["Batch", "Orders", "Sales", "Cost Price", "Delivery", "Oat Pay", "Profit"];
-    const tableRows = displayData.map(d => [d.batchName, d.orderCount, `BTN ${d.totalSales.toLocaleString()}`, `BTN ${d.totalCostPrice.toLocaleString()}`, `BTN ${d.deliveryFee.toLocaleString()}`, `BTN ${d.oatPayment.toLocaleString()}`, `BTN ${d.netProfit.toLocaleString()}`]);
-    autoTable(doc, { head: [tableColumn], body: tableRows });
-    doc.save(`${APP_NAME}_Report.pdf`);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      // Load the PDF stack on demand so it stays out of the initial bundle.
+      const [{ jsPDF }, autoTableMod] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
+      const autoTable = (autoTableMod as any).default || autoTableMod;
+      const doc = new jsPDF();
+      const tableColumn = ["Batch", "Orders", "Sales", "Cost Price", "Delivery", "Oat Pay", "Profit"];
+      const tableRows = displayData.map(d => [d.batchName, d.orderCount, `BTN ${d.totalSales.toLocaleString()}`, `BTN ${d.totalCostPrice.toLocaleString()}`, `BTN ${d.deliveryFee.toLocaleString()}`, `BTN ${d.oatPayment.toLocaleString()}`, `BTN ${d.netProfit.toLocaleString()}`]);
+      autoTable(doc, { head: [tableColumn], body: tableRows });
+      doc.save(`${APP_NAME}_Report.pdf`);
+    } catch (err: any) {
+      alert(err?.message || 'Unable to generate the PDF report.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const displayData = viewMode === 'batch' ? batchData : monthlyData;
@@ -227,7 +241,7 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
               <PieChart size={14} /> Monthly
             </button>
          </div>
-         <button onClick={handleDownloadPDF} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-black transition-all text-xs font-bold uppercase tracking-widest"><Download size={14} /> Export Report</button>
+         <button onClick={handleDownloadPDF} disabled={isExporting} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-black transition-all text-xs font-bold uppercase tracking-widest disabled:opacity-60"><Download size={14} /> {isExporting ? 'Preparing...' : 'Export Report'}</button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp } from 'lucide-react';
 import { Order, OrderFormData, BatchCost } from './types';
 import { APP_VIEWS, AppView, APP_NAME, BUILD_VERSION } from './constants';
@@ -13,11 +13,20 @@ import {
   updateBatchCost,
   saveSummaryEntry
 } from './services/storage';
-import { Dashboard } from './components/Dashboard';
-import { OrderForm } from './components/OrderForm';
-import { OrderList } from './components/OrderList';
-import { BatchAnalytics } from './components/BatchAnalytics';
-import { NetRevenue } from './components/NetRevenue';
+
+// Route views are code-split so the initial bundle stays small; recharts
+// (Dashboard) and jsPDF (Financial Reports) only download when first opened.
+const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const OrderForm = lazy(() => import('./components/OrderForm').then(m => ({ default: m.OrderForm })));
+const OrderList = lazy(() => import('./components/OrderList').then(m => ({ default: m.OrderList })));
+const BatchAnalytics = lazy(() => import('./components/BatchAnalytics').then(m => ({ default: m.BatchAnalytics })));
+const NetRevenue = lazy(() => import('./components/NetRevenue').then(m => ({ default: m.NetRevenue })));
+
+const ViewFallback = () => (
+  <div className="flex items-center justify-center py-24 text-slate-400">
+    <Loader2 className="animate-spin h-6 w-6" />
+  </div>
+);
 
 const generateId = () => {
   try {
@@ -349,19 +358,21 @@ export default function App() {
         </header>
 
         <div className="print:w-full">
+          <Suspense fallback={<ViewFallback />}>
           {currentView === APP_VIEWS.DASHBOARD && <Dashboard orders={orders} batchCosts={batchCosts} />}
-          {currentView === APP_VIEWS.NEW_ORDER && <OrderForm initialData={editingOrder || undefined} customerContext={customerContext || undefined} existingBatches={Array.from(new Set(orders.map(o => o.batchName)))} onSubmit={handleCreateOrUpdateOrder} onCancel={() => { 
+          {currentView === APP_VIEWS.NEW_ORDER && <OrderForm initialData={editingOrder || undefined} customerContext={customerContext || undefined} existingBatches={Array.from(new Set(orders.map(o => o.batchName)))} onSubmit={handleCreateOrUpdateOrder} onCancel={() => {
             if (editingOrder || customerContext) {
               setCurrentView(APP_VIEWS.ORDER_LIST);
             } else {
               setCurrentView(APP_VIEWS.DASHBOARD);
             }
-            setEditingOrder(null); 
-            setCustomerContext(null); 
+            setEditingOrder(null);
+            setCustomerContext(null);
           }} />}
           {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
           {currentView === APP_VIEWS.BATCH_ANALYTICS && <BatchAnalytics orders={orders} batchCosts={batchCosts} onUpdateBatchCost={handleUpdateBatchCost} initialEditBatch={batchToEditInAnalytics} />}
           {currentView === APP_VIEWS.NET_REVENUE && <NetRevenue orders={orders} batchCosts={batchCosts} />}
+          </Suspense>
         </div>
       </main>
     </div>
