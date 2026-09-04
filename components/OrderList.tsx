@@ -22,23 +22,26 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
   
   const [selectedCustomerKey, setSelectedCustomerKey] = useState<string | null>(null);
 
-  const uniqueBatches = Array.from(new Set([
+  const uniqueBatches = useMemo(() => Array.from(new Set([
     ...orders.map(o => o.batchName),
     ...(batchCosts || []).map(b => b.batchName)
-  ])).filter(Boolean).sort().reverse();
+  ])).filter(Boolean).sort().reverse(), [orders, batchCosts]);
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          order.phoneNumber.includes(searchTerm) ||
-                          order.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (order.productName || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBatch = batchFilter === 'all' || order.batchName === batchFilter;
-    const matchesStatus = statusFilter === 'all' || 
-                          (statusFilter === 'paid' && order.isFullPaymentReceived) ||
-                          (statusFilter === 'pending' && !order.isFullPaymentReceived);
-    
-    return matchesSearch && matchesBatch && matchesStatus;
-  });
+  const filteredOrders = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    return orders.filter(order => {
+      const matchesSearch = order.customerName.toLowerCase().includes(q) ||
+                            order.phoneNumber.includes(searchTerm) ||
+                            order.address.toLowerCase().includes(q) ||
+                            (order.productName || '').toLowerCase().includes(q);
+      const matchesBatch = batchFilter === 'all' || order.batchName === batchFilter;
+      const matchesStatus = statusFilter === 'all' ||
+                            (statusFilter === 'paid' && order.isFullPaymentReceived) ||
+                            (statusFilter === 'pending' && !order.isFullPaymentReceived);
+
+      return matchesSearch && matchesBatch && matchesStatus;
+    });
+  }, [orders, searchTerm, batchFilter, statusFilter]);
 
   const groupedOrdersMap = useMemo(() => {
     const groups: Record<string, Order[]> = {};
