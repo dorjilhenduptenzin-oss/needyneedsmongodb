@@ -265,22 +265,22 @@ export const Customers: React.FC<CustomersProps> = ({ orders, onViewCustomerOrde
 
       {/* summary strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+        <div className="bg-white p-5 rounded-xl shadow-card border border-slate-100 card-lift">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customers</p>
           <p className="text-2xl font-bold text-slate-900 mt-2">{summary.customers.toLocaleString()}</p>
           <p className="text-[10px] text-slate-400 mt-1">name + phone, all time</p>
         </div>
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+        <div className="bg-white p-5 rounded-xl shadow-card border border-slate-100 card-lift">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Repeat rate</p>
           <p className="text-2xl font-bold text-emerald-600 mt-2">{(summary.repeatRate * 100).toFixed(0)}%</p>
           <p className="text-[10px] text-slate-400 mt-1">ordered 2+ times</p>
         </div>
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+        <div className="bg-white p-5 rounded-xl shadow-card border border-slate-100 card-lift">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Top 10 share</p>
           <p className="text-2xl font-bold text-indigo-600 mt-2">{(summary.top10Share * 100).toFixed(0)}%</p>
           <p className="text-[10px] text-slate-400 mt-1">of all billed value</p>
         </div>
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+        <div className="bg-white p-5 rounded-xl shadow-card border border-slate-100 card-lift">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Avg order</p>
           <p className="text-2xl font-bold text-slate-900 mt-2">{btn(summary.avgOrderValue)}</p>
           <p className="text-[10px] text-slate-400 mt-1">billed ÷ orders</p>
@@ -288,7 +288,7 @@ export const Customers: React.FC<CustomersProps> = ({ orders, onViewCustomerOrde
       </div>
 
       {/* controls */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center gap-4">
+      <div className="bg-white p-4 rounded-xl shadow-card border border-slate-100 flex flex-col md:flex-row md:items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
@@ -317,7 +317,7 @@ export const Customers: React.FC<CustomersProps> = ({ orders, onViewCustomerOrde
       </div>
 
       {/* table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
         <div className="hidden md:grid grid-cols-[1.6fr_0.9fr_0.6fr_0.6fr_0.9fr_0.9fr_0.8fr] gap-3 px-5 py-3 border-b border-slate-100 bg-slate-50/50">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer</span>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Segment</span>
@@ -408,7 +408,7 @@ export const Customers: React.FC<CustomersProps> = ({ orders, onViewCustomerOrde
       </div>
 
       {/* --- monthly rollup --- */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
         <button onClick={() => setShowMonths(v => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/60 transition-colors">
           <span className="flex items-center gap-2 font-bold text-slate-900 text-sm"><CalendarClock size={16} className="text-slate-400" /> Customers by month</span>
           {showMonths ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
@@ -445,7 +445,7 @@ export const Customers: React.FC<CustomersProps> = ({ orders, onViewCustomerOrde
 
       {/* --- follow-ups --- */}
       {followUps.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
           <button onClick={() => setShowFollowUps(v => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/60 transition-colors">
             <span className="flex items-center gap-2 font-bold text-slate-900 text-sm">
               <Clock size={16} className="text-rose-400" /> Due for a follow-up
@@ -472,7 +472,7 @@ export const Customers: React.FC<CustomersProps> = ({ orders, onViewCustomerOrde
 
       {/* --- duplicates --- */}
       {dupes.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
           <button onClick={() => setShowDupes(v => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/60 transition-colors">
             <span className="flex items-center gap-2 font-bold text-slate-900 text-sm">
               <AlertTriangle size={16} className="text-amber-500" /> Possible duplicate customers

@@ -231,19 +231,19 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
          </div>
        )}
 
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-card border border-slate-100">
          <div className="flex bg-slate-100 p-1 rounded-lg w-full md:w-auto">
-            <button onClick={() => setViewMode('batch')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'batch' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+            <button onClick={() => setViewMode('batch')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'batch' ? 'bg-white text-slate-900 shadow-card' : 'text-slate-400 hover:text-slate-600'}`}>
               <BarChart3 size={14} /> Batches
             </button>
-            <button onClick={() => setViewMode('monthly')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'monthly' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+            <button onClick={() => setViewMode('monthly')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'monthly' ? 'bg-white text-slate-900 shadow-card' : 'text-slate-400 hover:text-slate-600'}`}>
               <PieChart size={14} /> Monthly
             </button>
          </div>
          <button onClick={handleDownloadPDF} disabled={isExporting} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-black transition-all text-xs font-bold uppercase tracking-widest disabled:opacity-60"><Download size={14} /> {isExporting ? 'Preparing...' : 'Export Report'}</button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50/50 border-b border-slate-100">

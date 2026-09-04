@@ -172,8 +172,8 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
       </div>
 
       {/* Month/Year Selection */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Select Period</h3>
+      <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+        <h3 className="text-lg font-semibold text-slate-800 mb-4 accent-tick">Select Period</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Year</label>
@@ -225,37 +225,37 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
       </div>
 
       {/* Sales Summary */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Sales Summary</h3>
+      <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+        <h3 className="text-lg font-semibold text-slate-800 mb-4 accent-tick">Sales Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+          <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200 card-lift">
             <p className="text-xs font-bold text-emerald-600 uppercase">Total Sales</p>
             <p className="text-2xl font-bold text-emerald-900 mt-2">BTN {profitCalculation.sales.toLocaleString()}</p>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 card-lift">
             <p className="text-xs font-bold text-blue-600 uppercase">Total Items</p>
             <p className="text-2xl font-bold text-blue-900 mt-2">{monthlyStats.totalItems}</p>
           </div>
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <p className="text-xs font-bold text-purple-600 uppercase">Advance Paid</p>
-            <p className="text-2xl font-bold text-purple-900 mt-2">BTN {monthlyStats.totalAdvance.toLocaleString()}</p>
+          <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200 card-lift">
+            <p className="text-xs font-bold text-indigo-600 uppercase">Advance Paid</p>
+            <p className="text-2xl font-bold text-indigo-900 mt-2">BTN {monthlyStats.totalAdvance.toLocaleString()}</p>
           </div>
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <p className="text-xs font-bold text-orange-600 uppercase">Pending</p>
-            <p className="text-2xl font-bold text-orange-900 mt-2">BTN {monthlyStats.totalRemaining.toLocaleString()}</p>
+          <div className="bg-rose-50 p-4 rounded-lg border border-rose-200 card-lift">
+            <p className="text-xs font-bold text-rose-600 uppercase">Pending</p>
+            <p className="text-2xl font-bold text-rose-900 mt-2">BTN {monthlyStats.totalRemaining.toLocaleString()}</p>
           </div>
         </div>
       </div>
 
       {/* Deductions (from Financial Reports) */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+      <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100">
         {!deductions.allClosed && (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg mb-4">
             <p className="text-sm text-amber-900">⚠️ <span className="font-semibold">Deductions are pending</span> until batch costs are entered in Financial Reports.</p>
           </div>
         )}
 
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Deductions</h3>
+        <h3 className="text-lg font-semibold text-slate-800 mb-4 accent-tick">Deductions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
             <p className="text-xs font-bold text-slate-500 uppercase">Cost Price</p>

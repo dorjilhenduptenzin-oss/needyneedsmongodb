@@ -208,8 +208,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
       <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-500">
         
         {/* BATCH CARD */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-           <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif">Shipping Batch</h3>
+        <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+           <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif accent-tick">Shipping Batch</h3>
            <div>
              <label className={labelClasses}>Batch Reference</label>
              <div className="flex flex-col sm:flex-row gap-3 items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -243,8 +243,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* CUSTOMER CARD */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-            <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif">Customer Details</h3>
+          <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif accent-tick">Customer Details</h3>
             <div className="space-y-4">
               <div>
                 <label className={labelClasses}>Full Name</label>
@@ -276,8 +276,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
           </div>
 
           {/* INVENTORY CARD */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-            <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif">Order Items</h3>
+          <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100 flex flex-col">
+            <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif accent-tick">Order Items</h3>
             <div className="space-y-6 flex-1 custom-scrollbar overflow-y-auto pr-1 max-h-[400px]">
                {items.map((item, index) => {
                  const baseVal = item.basePrice === '' ? 0 : item.basePrice;
@@ -349,8 +349,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
         </div>
 
         {/* PAYMENT CARD */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif">Payment & Logistics</h3>
+        <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+          <h3 className="text-lg font-bold text-slate-900 mb-6 font-serif accent-tick">Payment & Logistics</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
               <div>
@@ -397,7 +397,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Advance Paid</span>
                 <span className="text-xl font-bold text-emerald-600">BTN {(advancePaid || 0).toLocaleString()}</span>
              </div>
-             <div className={`p-5 rounded-2xl border flex flex-col gap-1 shadow-sm transition-all duration-300 ${totals.remainingBalance > 0 ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-emerald-600 border-emerald-500 text-white'}`}>
+             <div className={`p-5 rounded-2xl border flex flex-col gap-1 shadow-card transition-all duration-300 ${totals.remainingBalance > 0 ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-emerald-600 border-emerald-500 text-white'}`}>
                 <span className={`text-[10px] font-bold uppercase tracking-widest ${totals.remainingBalance > 0 ? 'text-rose-400' : 'text-emerald-100'}`}>Balance Due</span>
                 <span className="text-xl font-bold">BTN {totals.remainingBalance.toLocaleString()}</span>
              </div>
@@ -406,7 +406,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
 
         {/* ACTION BUTTONS */}
         <div className="flex items-center gap-4 pt-4 sticky bottom-6 z-10 bg-slate-50/80 backdrop-blur-sm md:bg-transparent pb-4 md:pb-0">
-          <button type="button" onClick={onCancel} className="flex-1 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-50 transition-all shadow-sm">
+          <button type="button" onClick={onCancel} className="flex-1 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-50 transition-all shadow-card">
             Cancel
           </button>
           <button type="submit" disabled={isSubmitting} className={`flex-[2] px-6 py-3 rounded-xl bg-rose-600 text-white font-bold uppercase tracking-widest text-[10px] ${isSubmitting ? 'opacity-60 pointer-events-none' : 'hover:bg-rose-700 active:scale-[0.98]'} transition-all shadow-lg shadow-rose-200 flex justify-center items-center gap-3`}>

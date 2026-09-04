@@ -138,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
       {/* Top Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Orders */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between h-32">
+        <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100 flex flex-col justify-between h-32 card-lift">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium text-sm">Total Orders</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
@@ -149,7 +149,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
         </div>
 
         {/* Total Outstanding */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between h-32">
+        <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100 flex flex-col justify-between h-32 card-lift">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium text-sm">Total Outstanding</span>
             <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
@@ -160,7 +160,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
         </div>
 
         {/* Total Revenue */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between h-32">
+        <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100 flex flex-col justify-between h-32 card-lift">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium text-sm">Total Sales</span>
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
@@ -171,7 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
         </div>
 
         {/* Net Revenue */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between h-32 ring-2 ring-indigo-50">
+        <div className="bg-white p-6 rounded-xl shadow-card border border-slate-100 flex flex-col justify-between h-32 card-lift ring-2 ring-indigo-50">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium text-sm">Net Profit</span>
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -186,7 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
       </div>
 
       {/* Main Content Area with Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col min-h-[500px]">
+      <div className="bg-white rounded-xl shadow-card border border-slate-100 flex flex-col min-h-[500px]">
          {/* Tabs Header */}
          <div className="flex border-b border-slate-100 p-2 overflow-x-auto">
              <button
@@ -216,7 +216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
             {viewMode === 'overview' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="flex flex-col">
-                        <h3 className="text-lg font-bold text-slate-900 mb-6">Total Financial Split</h3>
+                        <h3 className="text-lg font-bold text-slate-900 mb-6 accent-tick">Total Financial Split</h3>
                         <div className="w-full h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={overviewChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -239,7 +239,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
                     </div>
 
                     <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                        <h3 className="text-lg font-bold text-slate-900 mb-4">How Net Profit is Calculated</h3>
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 accent-tick">How Net Profit is Calculated</h3>
                         <ul className="space-y-4 text-sm text-slate-600">
                             <li className="flex justify-between items-center border-b border-slate-200 pb-2">
                                 <span>Total Revenue</span>
@@ -266,7 +266,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
             {/* VIEW 2: BY BATCH */}
             {viewMode === 'batch' && (
                 <div className="flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">Net Profit by Batch</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2 accent-tick">Net Profit by Batch</h3>
                     <p className="text-sm text-slate-500 mb-6">Batches sorted by highest profitability</p>
                     <div className="w-full h-[500px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -289,7 +289,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, batchCosts }) => {
              {/* VIEW 3: BY MONTH */}
              {viewMode === 'month' && (
                 <div className="flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">Profitability Over Time</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2 accent-tick">Profitability Over Time</h3>
                     <p className="text-sm text-slate-500 mb-6">Net Profit aggregated by month</p>
                     <div className="w-full h-[400px]">
                         <ResponsiveContainer width="100%" height="100%">

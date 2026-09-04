@@ -155,7 +155,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], i
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4">
+      <div className="bg-white p-4 rounded-xl shadow-card border border-slate-100 flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
@@ -229,7 +229,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], i
               <div 
                 key={customerKey}
                 onClick={() => setSelectedCustomerKey(customerKey)}
-                className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 hover:shadow-md hover:border-slate-200 transition-all cursor-pointer group"
+                className="bg-white rounded-xl shadow-card border border-slate-100 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 hover:border-slate-200 cursor-pointer group card-lift"
               >
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                    <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-sm shrink-0">

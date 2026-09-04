@@ -7,6 +7,32 @@
   .shadow-card {
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 12px 28px -18px rgba(15, 23, 42, 0.12);
   }
+
+  /* gentle "alive" lift for clickable rows/cards — transform + shadow only */
+  .card-lift {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 20px 36px -20px rgba(15, 23, 42, 0.24);
+  }
+
+  /* small accent marker that threads the app's rose through section headings */
+  .accent-tick::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 2px;
+    background: #f43f5e;
+    margin-right: 10px;
+    vertical-align: middle;
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lift, .card-lift:hover { transition: none; transform: none; }
 }
 
 /* --- lightweight, GPU-friendly motion (transform / opacity / background-position only) --- */

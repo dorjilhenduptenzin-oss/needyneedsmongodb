@@ -374,7 +374,7 @@ export default function App() {
         setCustomerFocusSearch(null);
         setIsMobileMenuOpen(false);
       }}
-      className={`flex items-center gap-3 w-full px-5 py-3.5 rounded-xl transition-all duration-200 font-semibold text-sm ${currentView === view ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 translate-x-1' : 'text-slate-500 hover:bg-white hover:text-slate-900'}`}
+      className={`flex items-center gap-3 w-full px-5 py-3.5 rounded-xl transition-all duration-200 font-semibold text-sm ${currentView === view ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 translate-x-1' : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:translate-x-0.5'}`}
     >
       <Icon size={18} className={currentView === view ? 'text-rose-500' : ''} />
       <span>{label}</span>
@@ -429,7 +429,7 @@ export default function App() {
         </nav>
         
         <div className="mt-auto pt-8 border-t border-slate-200/60 space-y-5">
-           <div className="px-5 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+           <div className="px-5 py-4 rounded-2xl bg-white border border-slate-100 shadow-card">
                <div className="flex items-center justify-between mb-3">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connectivity</span>
                     <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'}`} />
@@ -459,7 +459,8 @@ export default function App() {
       <main className="flex-1 p-6 md:p-10 lg:p-14 overflow-y-auto h-screen print:h-auto print:overflow-visible text-slate-900 custom-scrollbar">
         <header className="mb-12 flex justify-between items-start print:hidden">
           <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]" />
                 Authorized Access Repository
               </p>
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900 font-serif tracking-tight">
@@ -471,7 +472,7 @@ export default function App() {
                 {currentView === APP_VIEWS.CUSTOMERS && 'Customer Analytics'}
               </h1>
           </div>
-          <button className="md:hidden p-3 bg-white shadow-sm border border-slate-100 rounded-xl text-slate-900" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <button className="md:hidden p-3 bg-white shadow-card border border-slate-100 rounded-xl text-slate-900" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </header>
