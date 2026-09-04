@@ -65,7 +65,7 @@ const AppLogo = ({ className = '', pulse = false }: { className?: string; pulse?
     return (
       <div className="flex flex-col items-center gap-1">
         <span className="font-serif text-2xl font-bold text-slate-900 tracking-tight leading-none">Needy Needs</span>
-        <span className="text-[9px] uppercase tracking-[0.28em] font-extrabold text-slate-400">More than just essentials</span>
+        <span className="text-[9px] uppercase tracking-[0.28em] font-extrabold text-slate-400">Where Comfort Meets Little Champions</span>
       </div>
     );
   }
