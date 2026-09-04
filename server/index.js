@@ -18,9 +18,6 @@ const API_KEY = process.env.ADMIN_API_KEY || 'needyneeds-local-dev-key';
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-let client;
-let db;
-
 const isWriteRequest = (req) => {
   const provided = req.headers['x-api-key'] || req.headers['x-admin-key'];
   return String(provided || '') === API_KEY;
@@ -33,24 +30,38 @@ const requireWriteAccess = (req, res, next) => {
   return next();
 };
 
+// Cache the connection promise on globalThis so warm serverless invocations
+// (and concurrent requests during a cold start) reuse one MongoClient/pool
+// instead of opening a new one each time and exhausting Atlas connections.
 async function connectMongo() {
-  if (db) return db;
-
   if (!mongoUri) {
     throw new Error('MONGODB_URI is missing. Add it in .env');
   }
 
-  client = new MongoClient(mongoUri, {
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 5000,
-    maxPoolSize: 10,
-    retryWrites: true,
-    writeConcern: { w: 'majority' }
-  });
+  if (!globalThis.__needyMongoPromise) {
+    globalThis.__needyMongoPromise = (async () => {
+      const client = new MongoClient(mongoUri, {
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 5000,
+        maxPoolSize: 10,
+        retryWrites: true,
+        writeConcern: { w: 'majority' }
+      });
+      await client.connect();
+      const database = client.db(dbName);
+      // Fire-and-forget: don't block the first request on index creation.
+      ensureIndexes(database).catch((err) => {
+        console.warn('ensureIndexes skipped:', err.message);
+      });
+      return database;
+    })().catch((err) => {
+      // Don't cache a rejected promise - allow the next request to retry.
+      globalThis.__needyMongoPromise = undefined;
+      throw err;
+    });
+  }
 
-  await client.connect();
-  db = client.db(dbName);
-  return db;
+  return globalThis.__needyMongoPromise;
 }
 
 export function validateNumberField(value, fieldName, allowBlank = false) {
@@ -179,9 +190,7 @@ export function buildBatchCostUpdate(currentDoc, patch) {
   return nextDoc;
 }
 
-async function ensureIndexes() {
-  const database = await connectMongo();
-
+async function ensureIndexes(database) {
   const duplicateOrders = await database.collection('orders').aggregate([
     { $group: { _id: '$orderId', count: { $sum: 1 } } },
     { $match: { count: { $gt: 1 } } }
@@ -527,8 +536,8 @@ export default app;
 
 if (isDirectServerRun) {
   app.listen(port, () => {
+    // connectMongo() now runs ensureIndexes() internally.
     connectMongo()
-      .then(() => ensureIndexes())
       .then(() => console.log(`Mongo API running on http://localhost:${port}`))
       .catch((error) => {
         console.error('Mongo startup failed:', error.message);
