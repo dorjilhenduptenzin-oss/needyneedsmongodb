@@ -35,5 +35,14 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  preview: {
+    // so `npm run preview` (production build) can also reach a local API
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      }
+    }
   }
 })
