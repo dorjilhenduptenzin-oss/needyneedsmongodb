@@ -27,6 +27,17 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
     ...(batchCosts || []).map(b => b.batchName)
   ])).filter(Boolean).sort().reverse(), [orders, batchCosts]);
 
+  // Packed status per batch, set in Financial Reports. A batch with no cost
+  // config yet counts as not packed.
+  const batchPackedMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    (batchCosts || []).forEach(b => m.set(b.batchName, Boolean(b.isPacked)));
+    return m;
+  }, [batchCosts]);
+
+  const isBatchPacked = (batchName: string) => batchPackedMap.get(batchName) === true;
+  const batchOptionLabel = (batchName: string) => `${batchName} · ${isBatchPacked(batchName) ? 'Packed' : 'Pending'}`;
+
   const filteredOrders = useMemo(() => {
     const q = searchTerm.toLowerCase();
     return orders.filter(order => {
@@ -145,7 +156,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
         <div className="flex gap-2">
           <select value={batchFilter} onChange={(e) => setBatchFilter(e.target.value)} className={selectClasses}>
             <option value="all">All Batches</option>
-            {uniqueBatches.map(b => <option key={b} value={b}>{b}</option>)}
+            {uniqueBatches.map(b => <option key={b} value={b}>{batchOptionLabel(b)}</option>)}
           </select>
 
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClasses}>
@@ -155,6 +166,15 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
           </select>
         </div>
       </div>
+
+      {batchFilter !== 'all' && (
+        <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border ${isBatchPacked(batchFilter) ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+          <span className="text-sm font-bold text-slate-800 font-serif">{batchFilter}</span>
+          <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${isBatchPacked(batchFilter) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
+            {isBatchPacked(batchFilter) ? 'Packed' : 'Not packed yet'}
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         {groupedOrders.length === 0 ? (
@@ -250,16 +270,19 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
                                 <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4">
                                         <p className="font-bold text-slate-900 text-sm">{order.productName}</p>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                                             <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1.5 border border-slate-200">
                                               {order.batchName}
-                                              <button 
-                                                onClick={(e) => { e.stopPropagation(); onEditBatchCost?.(order.batchName); }} 
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); onEditBatchCost?.(order.batchName); }}
                                                 className="text-slate-400 hover:text-indigo-600 transition-colors"
                                                 title="Edit Batch Cost"
                                               >
                                                 <Edit3 size={10} />
                                               </button>
+                                            </span>
+                                            <span className={`text-[9px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border ${isBatchPacked(order.batchName) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
+                                              {isBatchPacked(order.batchName) ? 'Packed' : 'Not packed'}
                                             </span>
                                             <span className="text-[10px] text-slate-300">•</span>
                                             <span className="text-[10px] text-slate-500 font-medium">{order.quantity} Units</span>
@@ -313,7 +336,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
                           >
                             <option value="">Select batch</option>
                             {uniqueBatches.map(batchName => (
-                                <option key={batchName} value={batchName}>{batchName}</option>
+                                <option key={batchName} value={batchName}>{batchOptionLabel(batchName)}</option>
                               ))}
                           </select>
                           <button
