@@ -56,9 +56,22 @@ const parseErrorMessage = async (response: Response, fallback: string) => {
   }
 };
 
+// Orders are fetched in pages so the first screenful paints fast on large
+// datasets; the caller then pulls the rest in the background.
+export const ORDERS_PAGE_SIZE = 1000;
+
+export const fetchOrdersPage = async (skip: number): Promise<Order[]> => {
+  const res = await fetch(`${API_BASE}/orders?limit=${ORDERS_PAGE_SIZE}&skip=${skip}`);
+  if (!res.ok) {
+    throw new Error('Unable to load orders.');
+  }
+  const rows = await res.json();
+  return (rows || []).map(normalizeOrder);
+};
+
 export const loadDataFromSheets = async () => {
   const [ordersRes, costsRes] = await Promise.all([
-    fetch(`${API_BASE}/orders`),
+    fetch(`${API_BASE}/orders?limit=${ORDERS_PAGE_SIZE}&skip=0`),
     fetch(`${API_BASE}/batchCosts`)
   ]);
 
@@ -68,10 +81,13 @@ export const loadDataFromSheets = async () => {
 
   const orders = await ordersRes.json();
   const costs = await costsRes.json();
+  const normalizedOrders = (orders || []).map(normalizeOrder);
 
   return {
-    orders: (orders || []).map(normalizeOrder),
-    batchCosts: (costs || []).map(normalizeCost)
+    orders: normalizedOrders,
+    batchCosts: (costs || []).map(normalizeCost),
+    // If the server ignored ?limit (older build) it returns everything at once.
+    ordersComplete: normalizedOrders.length < ORDERS_PAGE_SIZE || (orders || []).length > ORDERS_PAGE_SIZE
   };
 };
 

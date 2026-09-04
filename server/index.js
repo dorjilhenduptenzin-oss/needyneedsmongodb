@@ -231,7 +231,24 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/orders', async (req, res) => {
   try {
     const database = await connectMongo();
-    const orders = await database.collection('orders').find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).toArray();
+
+    // Optional pagination: ?limit=&skip= over the same createdAt-desc order.
+    // With no params the response is unchanged (every order), so older clients
+    // and any non-paginating caller keep working exactly as before.
+    const rawLimit = Number(req.query.limit);
+    const rawSkip = Number(req.query.skip);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 5000) : 0;
+    const skip = Number.isFinite(rawSkip) && rawSkip > 0 ? Math.floor(rawSkip) : 0;
+
+    // Sort by createdAt only so the existing createdAt_-1 index streams the
+    // result. Rare ties at a page boundary are de-duped by id on the client.
+    let cursor = database.collection('orders')
+      .find({ isDeleted: { $ne: true } })
+      .sort({ createdAt: -1 });
+    if (skip) cursor = cursor.skip(skip);
+    if (limit) cursor = cursor.limit(limit);
+
+    const orders = await cursor.toArray();
     res.json(orders.map((entry) => ({ ...entry, createdAt: entry.createdAt ? new Date(entry.createdAt).getTime() : Date.now() })));
   } catch (error) {
     res.status(500).json({ error: 'Unable to load orders.' });
