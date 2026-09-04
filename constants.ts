@@ -5,6 +5,7 @@ export const BUILD_VERSION = "4.6.0";
 export const DELIVERY_FEE_PER_ITEM = 100;
 export const OAT_RATE = 28;
 export const FIXED_CHARGE = 150;
+export const FIXED_HOUSE_EXPENSE = 30000;
 
 export const TRANSPORT_MODES = [
   'Bus',

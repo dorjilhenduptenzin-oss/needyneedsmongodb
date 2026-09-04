@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Order, BatchCost } from '../types';
 import { TrendingUp, Download, Save, CheckCircle } from 'lucide-react';
 import { upsertSummaryEntry, SummaryEntry } from '../services/storage';
-import { DELIVERY_FEE_PER_ITEM, OAT_RATE } from '../constants';
+import { DELIVERY_FEE_PER_ITEM, OAT_RATE, FIXED_HOUSE_EXPENSE } from '../constants';
 
 interface NetRevenueProps {
   orders: Order[];
@@ -19,10 +19,7 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
   const [startBatch, setStartBatch] = useState('');
   const [endBatch, setEndBatch] = useState('');
   const [salaryDeduction, setSalaryDeduction] = useState(50000);
-  const [otherExpense, setOtherExpense] = useState(0);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-
-  const FIXED_EXPENSE = 50000;
 
   // Get all unique batches
   const uniqueBatches = useMemo(() => {
@@ -128,15 +125,14 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
     const cost = deductions.allClosed ? deductions.totalCostPrice : 0;
     const delivery = deductions.allClosed ? deductions.totalDelivery : 0;
     const oat = deductions.allClosed ? deductions.totalOat : 0;
-    const otherExpenseValue = otherExpense;
     const salaryExpense = salaryDeduction;
+    const houseExpense = FIXED_HOUSE_EXPENSE;
 
-    // Exclude otherLocalDelivery from total deductions per request
-    const totalDeductions = cost + delivery + oat + salaryExpense + otherExpenseValue;
+    const totalDeductions = cost + delivery + oat + salaryExpense + houseExpense;
     const netProfit = sales - totalDeductions;
 
-    return { sales, cost, delivery, oat, salaryExpense, otherExpenseValue, totalDeductions, netProfit };
-  }, [monthlyStats, deductions, salaryDeduction, otherExpense]);
+    return { sales, cost, delivery, oat, salaryExpense, houseExpense, totalDeductions, netProfit };
+  }, [monthlyStats, deductions, salaryDeduction]);
 
   const handleSaveData = async () => {
     const monthYearStr = `${selectedYear}-${selectedMonth}`;
@@ -147,8 +143,7 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
       costPrice: deductions.allClosed ? deductions.totalCostPrice : null,
       deliveryFee: deductions.allClosed ? deductions.totalDelivery : null,
       oatPayment: deductions.allClosed ? deductions.totalOat : null,
-      // Do not include localDeliveryFee in fixed expenses used for net profit
-      fixedExpense: salaryDeduction + otherExpense,
+      fixedExpense: salaryDeduction + FIXED_HOUSE_EXPENSE,
       netProfit: profitCalculation.netProfit,
       isBatchClosed: deductions.allClosed,
       savedAt: new Date().toISOString()
@@ -284,29 +279,27 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Salary</label>
-            <input
-              type="number"
-              min="0"
-              value={salaryDeduction}
-              onChange={(e) => setSalaryDeduction(Number(e.target.value) || 0)}
-              className={selectClasses}
-            />
-          </div>
+        <div className="mt-6">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Fixed Monthly Expenses</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Salary</label>
+              <input
+                type="number"
+                min="0"
+                value={salaryDeduction}
+                onChange={(e) => setSalaryDeduction(Number(e.target.value) || 0)}
+                className={selectClasses}
+              />
+            </div>
 
-          {/* Other Local Delivery Fee input removed from UI */}
-
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Other Expense</label>
-            <input
-              type="number"
-              min="0"
-              value={otherExpense}
-              onChange={(e) => setOtherExpense(Number(e.target.value) || 0)}
-              className={selectClasses}
-            />
+            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">House Expense</label>
+                <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">Fixed</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">BTN {FIXED_HOUSE_EXPENSE.toLocaleString()}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -342,12 +335,11 @@ export const NetRevenue: React.FC<NetRevenueProps> = ({ orders, batchCosts = [],
             <span className="text-slate-300">Salary</span>
             <span className="font-semibold text-rose-400">- BTN {profitCalculation.salaryExpense.toLocaleString()}</span>
           </div>
-          {/* Other Local Delivery Fee removed from UI per request */}
           <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-300">Other Expense</span>
-            <span className="font-semibold text-rose-400">- BTN {profitCalculation.otherExpenseValue.toLocaleString()}</span>
+            <span className="text-slate-300">House Expense (fixed)</span>
+            <span className="font-semibold text-rose-400">- BTN {profitCalculation.houseExpense.toLocaleString()}</span>
           </div>
-          
+
           <div className="h-px bg-slate-700"></div>
           <div className="flex justify-between items-center text-lg pt-2">
             <span className="font-bold">Net Profit</span>
