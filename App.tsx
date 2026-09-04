@@ -5,6 +5,8 @@ import { Order, OrderFormData, BatchCost } from './types';
 import { APP_VIEWS, AppView, APP_NAME, BUILD_VERSION } from './constants';
 import {
   loadDataFromSheets,
+  fetchOrdersPage,
+  ORDERS_PAGE_SIZE,
   createOrder,
   updateOrder,
   deleteOrder,
@@ -53,17 +55,60 @@ export default function App() {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [batchToEditInAnalytics, setBatchToEditInAnalytics] = useState<string | null>(null);
 
+  // Bumped on every full (re)load so a superseded background fill can bail out.
+  const loadTokenRef = useRef(0);
+
   useEffect(() => { ordersRef.current = orders; }, [orders]);
   useEffect(() => { costsRef.current = batchCosts; }, [batchCosts]);
+
+  // Pull the remaining order pages in the background. Accumulate into a local
+  // array and replace `orders` with the running total each round, so we never
+  // depend on the previous React state (which batching / StrictMode can make
+  // stale) and never double-count.
+  const loadRemainingOrders = useCallback(async (token: number, firstPage: Order[]) => {
+    const acc: Order[] = Array.isArray(firstPage) ? [...firstPage] : [];
+    const seen = new Set(acc.map(o => String(o.id).trim()));
+    let skip = ORDERS_PAGE_SIZE;
+
+    for (let guard = 0; guard < 500; guard++) {
+      // Retry a page a few times so one transient network blip doesn't
+      // silently leave the dataset partial.
+      let page: Order[] | null = null;
+      for (let attempt = 0; attempt < 3 && page === null; attempt++) {
+        if (token !== loadTokenRef.current) return; // superseded by a newer load
+        try {
+          page = await fetchOrdersPage(skip);
+        } catch {
+          await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+        }
+      }
+      if (page === null) return;                        // gave up on this page
+      if (token !== loadTokenRef.current) return;       // superseded
+      if (page.length > ORDERS_PAGE_SIZE) return;       // server not paginating; already have everything
+
+      let added = 0;
+      for (const o of page) {
+        const id = String(o.id).trim();
+        if (!seen.has(id)) { seen.add(id); acc.push(o); added++; }
+      }
+      setOrders(acc.slice());
+
+      if (page.length < ORDERS_PAGE_SIZE || added === 0) return; // reached the end
+      skip += ORDERS_PAGE_SIZE;
+    }
+  }, []);
 
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
       setSyncError(null);
+      const token = ++loadTokenRef.current;
       try {
         const data = await loadDataFromSheets();
+        if (token !== loadTokenRef.current) return;
         if (data.orders) setOrders(data.orders);
         if (data.batchCosts) setBatchCosts(data.batchCosts);
+        if (!data.ordersComplete) void loadRemainingOrders(token, data.orders);
       } catch (err: any) {
         console.error("Initial load failed:", err);
         setSyncError(err?.message || 'Unable to connect to the server.');
@@ -72,7 +117,7 @@ export default function App() {
       }
     };
     init();
-  }, []);
+  }, [loadRemainingOrders]);
 
   const triggerCloudSync = useCallback(async (_currentOrders: Order[], _currentCosts: BatchCost[]) => {
     return;
@@ -96,10 +141,13 @@ export default function App() {
   const refreshData = async () => {
     setIsSyncing(true);
     setSyncError(null);
+    const token = ++loadTokenRef.current;
     try {
       const data = await loadDataFromSheets();
+      if (token !== loadTokenRef.current) return;
       if (data.orders) setOrders(data.orders);
       if (data.batchCosts) setBatchCosts(data.batchCosts);
+      if (!data.ordersComplete) void loadRemainingOrders(token, data.orders);
     } catch (err: any) {
       setSyncError(err?.message || 'Unable to connect to the server. Your changes have not been saved.');
     } finally {
