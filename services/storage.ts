@@ -31,7 +31,10 @@ const normalizeOrder = (item: any): Order => ({
   advancePaid: Number(item.advancePaid || 0),
   transportMode: item.transportMode || 'Keep at Shop',
   note: item.note || undefined,
-  isFullPaymentReceived: Boolean(item.isFullPaymentReceived)
+  isFullPaymentReceived: Boolean(item.isFullPaymentReceived),
+  // Keep the server's optimistic-concurrency version so a second edit of the
+  // same order doesn't spuriously 409 ("modified by another user").
+  version: Number.isFinite(Number(item.version)) ? Number(item.version) : 1
 });
 
 const normalizeCost = (item: any): BatchCost => ({
