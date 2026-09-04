@@ -284,7 +284,9 @@ app.patch('/api/orders/:orderId', requireWriteAccess, async (req, res) => {
       { returnDocument: 'after' }
     );
 
-    res.json({ ok: true, order: updated.value, message: 'Order updated successfully.' });
+    // mongodb driver v6: findOneAndUpdate returns the document directly (or null),
+    // not a { value } wrapper, unless includeResultMetadata:true is passed.
+    res.json({ ok: true, order: updated, message: 'Order updated successfully.' });
   } catch (error) {
     const message = error.message || 'Unable to update order.';
     res.status(400).json({ error: message });
@@ -310,7 +312,7 @@ app.delete('/api/orders/:orderId', requireWriteAccess, async (req, res) => {
     );
 
     // If not found, attempt to interpret orderId as an ObjectId and try again
-    if (!result.value) {
+    if (!result) {
       try {
         const { ObjectId } = await import('mongodb');
         if (ObjectId.isValid(orderId)) {
@@ -333,7 +335,7 @@ app.delete('/api/orders/:orderId', requireWriteAccess, async (req, res) => {
     }
 
     // If still not found, attempt a permissive update (idempotent) to set isDeleted=true for any matching orderId
-    if (!result.value) {
+    if (!result) {
       const updateRes = await database.collection('orders').updateMany(
         { orderId },
         {
@@ -355,7 +357,7 @@ app.delete('/api/orders/:orderId', requireWriteAccess, async (req, res) => {
       return res.status(404).json({ error: 'Order not found.' });
     }
 
-    res.json({ ok: true, deleted: true, order: result.value, message: 'Order deleted successfully.' });
+    res.json({ ok: true, deleted: true, order: result, message: 'Order deleted successfully.' });
   } catch (error) {
     res.status(500).json({ error: 'Unable to delete order.' });
   }
@@ -378,11 +380,11 @@ app.post('/api/orders/:orderId/restore', requireWriteAccess, async (req, res) =>
       { returnDocument: 'after' }
     );
 
-    if (!result.value) {
+    if (!result) {
       return res.status(404).json({ error: 'Order not found.' });
     }
 
-    res.json({ ok: true, restored: true, order: result.value, message: 'Order restored successfully.' });
+    res.json({ ok: true, restored: true, order: result, message: 'Order restored successfully.' });
   } catch (error) {
     res.status(500).json({ error: 'Unable to restore order.' });
   }
@@ -453,7 +455,7 @@ app.patch('/api/batchCosts/:batchName', requireWriteAccess, async (req, res) => 
       { returnDocument: 'after' }
     );
 
-    res.json({ ok: true, batchCost: updated.value, message: 'Batch cost updated successfully.' });
+    res.json({ ok: true, batchCost: updated, message: 'Batch cost updated successfully.' });
   } catch (error) {
     const message = error.message || 'Unable to update batch cost.';
     res.status(400).json({ error: message });
@@ -477,11 +479,11 @@ app.delete('/api/batchCosts/:batchName', requireWriteAccess, async (req, res) =>
       { returnDocument: 'after' }
     );
 
-    if (!result.value) {
+    if (!result) {
       return res.status(404).json({ error: 'Batch cost not found.' });
     }
 
-    res.json({ ok: true, deleted: true, batchCost: result.value, message: 'Batch cost deleted successfully.' });
+    res.json({ ok: true, deleted: true, batchCost: result, message: 'Batch cost deleted successfully.' });
   } catch (error) {
     res.status(500).json({ error: 'Unable to delete batch cost.' });
   }
