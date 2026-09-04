@@ -69,14 +69,20 @@ export default function App() {
     return;
   }, []);
 
+  // Auto-dismiss the transient success message so it is actually readable
+  // (previously a 0ms timer keyed on data changes cleared it immediately).
   useEffect(() => {
-    if (isLoading) return;
-    const timer = setTimeout(() => {
-      setSyncError(null);
-      setSyncMessage(null);
-    }, 0);
+    if (!syncMessage) return;
+    const timer = setTimeout(() => setSyncMessage(null), 4000);
     return () => clearTimeout(timer);
-  }, [orders, batchCosts, isLoading]);
+  }, [syncMessage]);
+
+  // Clear a stale error banner after a while so it does not linger forever.
+  useEffect(() => {
+    if (!syncError) return;
+    const timer = setTimeout(() => setSyncError(null), 8000);
+    return () => clearTimeout(timer);
+  }, [syncError]);
 
   const refreshData = async () => {
     setIsSyncing(true);
