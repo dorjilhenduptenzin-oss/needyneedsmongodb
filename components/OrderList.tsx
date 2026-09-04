@@ -1,20 +1,22 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Order, TransportMode, BatchCost } from '../types';
-import { Search, MapPin, Phone, Edit2, Package, Bus, Truck, Mail, Home, X, ArrowRight, Trash2, Edit3, Plus, StickyNote } from 'lucide-react';
+import { Search, MapPin, Phone, Edit2, Package, Bus, Truck, Mail, Home, X, ArrowRight, Trash2, Edit3, Plus, StickyNote, Loader2 } from 'lucide-react';
 
 interface OrderListProps {
   orders: Order[];
-  batchCosts?: BatchCost[]; 
+  batchCosts?: BatchCost[];
+  isBackgroundLoading?: boolean;
   onDelete: (id: string | string[]) => void;
   onEdit: (order: Order) => void;
   onAddMore: (order: Order) => void;
   onEditBatchCost?: (batchName: string) => void;
   onUpdateOrders: (orders: Order[]) => void;
-  onMoveCustomerOrders?: (orders: Order[], targetBatch: string) => void;
+  onMoveCustomerOrders?: (orders: Order[], targetBatch: string) => void | Promise<void>;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], isBackgroundLoading = false, onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
+  const [isMoving, setIsMoving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [batchFilter, setBatchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -115,12 +117,18 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
     }, { totalQty: 0, totalSales: 0, totalAdvance: 0, totalRemaining: 0 });
   }, [selectedGroupOrders]);
 
-  const handleMoveCustomerOrders = (e: React.MouseEvent) => {
+  const handleMoveCustomerOrders = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!selectedGroupOrders || !onMoveCustomerOrders) return;
     if (!batchMoveTarget || !batchMoveTarget.trim()) return;
-    onMoveCustomerOrders(selectedGroupOrders, batchMoveTarget.trim());
-    setSelectedCustomerKey(null);
+    if (isMoving) return;
+    setIsMoving(true);
+    try {
+      await onMoveCustomerOrders(selectedGroupOrders, batchMoveTarget.trim());
+      setSelectedCustomerKey(null);
+    } finally {
+      setIsMoving(false);
+    }
   };
 
   const handleSingleDelete = (id: string, productName: string) => {
@@ -176,8 +184,27 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
         </div>
       )}
 
+      {isBackgroundLoading && (
+        <div className="flex items-center justify-center gap-2 text-slate-400 text-[11px] font-semibold">
+          <Loader2 size={13} className="animate-spin" /> Loading more orders…
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4">
-        {groupedOrders.length === 0 ? (
+        {groupedOrders.length === 0 && isBackgroundLoading ? (
+          [0, 1, 2, 3].map(i => (
+            <div key={`sk-${i}`} className="bg-white rounded-xl border border-slate-100 p-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="skeleton w-10 h-10 rounded-full" />
+                <div className="space-y-2">
+                  <div className="skeleton h-3 w-40" />
+                  <div className="skeleton h-2.5 w-24" />
+                </div>
+              </div>
+              <div className="skeleton h-6 w-20" />
+            </div>
+          ))
+        ) : groupedOrders.length === 0 ? (
           <div className="text-center py-16 text-slate-400 bg-white rounded-xl border border-slate-100 border-dashed font-medium">
             No matching records found.
           </div>
@@ -328,10 +355,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
                         <div className="flex gap-3">
                           <select
                             value={batchMoveTarget}
-                            onChange={(e) => {
-                              console.debug('Move dropdown changed to', e.target.value);
-                              setBatchMoveTarget(e.target.value);
-                            }}
+                            onChange={(e) => setBatchMoveTarget(e.target.value)}
                             className="flex-1 px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500 bg-white text-slate-900 text-sm font-medium"
                           >
                             <option value="">Select batch</option>
@@ -341,9 +365,10 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], o
                           </select>
                           <button
                             onClick={handleMoveCustomerOrders}
-                            className="px-5 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors text-xs uppercase tracking-widest"
+                            disabled={isMoving || !batchMoveTarget}
+                            className="px-5 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Move Customer
+                            {isMoving ? <><Loader2 size={14} className="animate-spin" /> Moving…</> : 'Move Customer'}
                           </button>
                         </div>
                       </div>

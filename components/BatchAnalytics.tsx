@@ -125,9 +125,8 @@ export const BatchAnalytics: React.FC<BatchAnalyticsProps> = ({ orders, batchCos
         setEditingBatchVersion(undefined);
       }, 1200);
     } catch (err: any) {
-      // show error inline
+      // App surfaces the error in the global toast; just leave the modal open.
       setSaveStatus('idle');
-      alert(err?.message || 'Unable to save batch cost');
     }
   };
 

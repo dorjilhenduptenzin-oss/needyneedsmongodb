@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Order, OrderFormData, BatchCost } from './types';
 import { APP_VIEWS, AppView, APP_NAME, BUILD_VERSION } from './constants';
 import {
@@ -30,6 +30,33 @@ const ViewFallback = () => (
   </div>
 );
 
+type ToastKind = 'success' | 'error' | 'working';
+
+// One status toast, fixed to the viewport so it is visible on every screen
+// size (the sidebar it used to live in is off-canvas on mobile).
+const StatusToast = ({ kind, text, onDismiss }: { kind: ToastKind; text: string; onDismiss?: () => void }) => {
+  const theme = {
+    success: { bar: 'bg-emerald-500', icon: <CheckCircle2 className="text-emerald-600" size={18} /> },
+    error:   { bar: 'bg-rose-500',    icon: <AlertTriangle className="text-rose-600" size={18} /> },
+    working: { bar: 'bg-slate-400',   icon: <Loader2 className="animate-spin text-slate-500" size={18} /> },
+  }[kind];
+
+  return (
+    <div className="fixed z-[60] top-4 left-4 right-4 md:left-auto md:right-6 md:w-96 print:hidden" role="status" aria-live="polite">
+      <div className="relative flex items-start gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white pl-4 pr-3 py-3 shadow-card animate-toast-in">
+        <span className={`absolute left-0 top-0 bottom-0 w-1 ${theme.bar}`} />
+        <span className="shrink-0 mt-0.5">{theme.icon}</span>
+        <p className="flex-1 text-sm font-semibold leading-snug text-slate-800">{text}</p>
+        {onDismiss && (
+          <button onClick={onDismiss} className="shrink-0 -m-1 rounded-lg p-1 text-slate-400 transition-colors hover:text-slate-900" aria-label="Dismiss">
+            <X size={16} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const generateId = () => {
   try {
     return (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).substring(2));
@@ -51,6 +78,8 @@ export default function App() {
   const [customerContext, setCustomerContext] = useState<Partial<Order> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  const [bgFilling, setBgFilling] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [batchToEditInAnalytics, setBatchToEditInAnalytics] = useState<string | null>(null);
@@ -108,7 +137,10 @@ export default function App() {
         if (token !== loadTokenRef.current) return;
         if (data.orders) setOrders(data.orders);
         if (data.batchCosts) setBatchCosts(data.batchCosts);
-        if (!data.ordersComplete) void loadRemainingOrders(token, data.orders);
+        if (!data.ordersComplete) {
+          setBgFilling(true);
+          void loadRemainingOrders(token, data.orders).finally(() => setBgFilling(false));
+        }
       } catch (err: any) {
         console.error("Initial load failed:", err);
         setSyncError(err?.message || 'Unable to connect to the server.');
@@ -140,6 +172,7 @@ export default function App() {
 
   const refreshData = async () => {
     setIsSyncing(true);
+    setBusyLabel('Syncing with server…');
     setSyncError(null);
     const token = ++loadTokenRef.current;
     try {
@@ -147,17 +180,23 @@ export default function App() {
       if (token !== loadTokenRef.current) return;
       if (data.orders) setOrders(data.orders);
       if (data.batchCosts) setBatchCosts(data.batchCosts);
-      if (!data.ordersComplete) void loadRemainingOrders(token, data.orders);
+      if (!data.ordersComplete) {
+        setBgFilling(true);
+        void loadRemainingOrders(token, data.orders).finally(() => setBgFilling(false));
+      }
+      setSyncMessage('Data refreshed');
     } catch (err: any) {
       setSyncError(err?.message || 'Unable to connect to the server. Your changes have not been saved.');
     } finally {
       setIsSyncing(false);
+      setBusyLabel(null);
     }
   };
 
   const handleCreateOrUpdateOrder = async (data: OrderFormData | OrderFormData[]) => {
     try {
       setIsSyncing(true);
+      setBusyLabel(editingOrder ? 'Updating order…' : 'Saving order…');
       setSyncError(null);
 
       const items = Array.isArray(data) ? data : [data];
@@ -190,11 +229,12 @@ export default function App() {
       setEditingOrder(null);
       setCustomerContext(null);
       setCurrentView(APP_VIEWS.ORDER_LIST);
-      setSyncMessage(editingOrder ? 'Order updated successfully' : 'Order saved successfully');
+      setSyncMessage(editingOrder ? 'Order updated' : (items.length > 1 ? `${items.length} orders saved` : 'Order saved'));
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to save order. The change has not been confirmed.');
     } finally {
       setIsSyncing(false);
+      setBusyLabel(null);
     }
   };
 
@@ -205,6 +245,7 @@ export default function App() {
 
     try {
       setIsSyncing(true);
+      setBusyLabel(idsToKill.length > 1 ? 'Deleting orders…' : 'Deleting order…');
       setSyncError(null);
 
       // Optimistic UI update: remove locally first so app reflects deletion immediately
@@ -222,10 +263,12 @@ export default function App() {
           throw e;
         }
       }
+      setSyncMessage(idsToKill.length > 1 ? `${idsToKill.length} orders deleted` : 'Order deleted');
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to delete order. The change has not been confirmed.');
     } finally {
       setIsSyncing(false);
+      setBusyLabel(null);
     }
   };
 
@@ -243,6 +286,7 @@ export default function App() {
 
     try {
       setIsSyncing(true);
+      setBusyLabel('Moving orders…');
       setSyncError(null);
 
       // Optimistic update: apply the batch change immediately in UI (show incremented version locally)
@@ -261,16 +305,19 @@ export default function App() {
           throw e;
         }
       }
+      setSyncMessage(`Moved to ${targetBatch.trim()}`);
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to move the customer orders to the new batch.');
     } finally {
       setIsSyncing(false);
+      setBusyLabel(null);
     }
   };
 
   const handleUpdateBatchCost = async (cost: BatchCost) => {
     try {
       setIsSyncing(true);
+      setBusyLabel('Saving batch cost…');
       setSyncError(null);
 
       let persisted: BatchCost | null = null;
@@ -303,12 +350,14 @@ export default function App() {
           console.error('Failed to refresh batch costs after save', e);
         }
 
-        setSyncMessage('Batch cost saved successfully');
+        setSyncMessage('Batch cost saved');
       }
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to save batch cost. The change has not been confirmed.');
+      throw error; // let the modal know the save failed
     } finally {
       setIsSyncing(false);
+      setBusyLabel(null);
       setBatchToEditInAnalytics(null);
     }
   };
@@ -343,6 +392,23 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col md:flex-row print:bg-white relative">
+
+      {/* top progress bar — immediate "something is happening" feedback */}
+      {(isSyncing || bgFilling) && (
+        <div className="fixed top-0 left-0 right-0 h-[3px] z-[70] overflow-hidden bg-rose-100 print:hidden">
+          <div className="h-full w-1/3 bg-rose-500 animate-progress" />
+        </div>
+      )}
+
+      {/* status toast — visible on every screen size */}
+      {syncError ? (
+        <StatusToast kind="error" text={syncError} onDismiss={() => setSyncError(null)} />
+      ) : syncMessage ? (
+        <StatusToast kind="success" text={syncMessage} onDismiss={() => setSyncMessage(null)} />
+      ) : isSyncing ? (
+        <StatusToast kind="working" text={busyLabel ?? 'Working…'} />
+      ) : null}
+
       <aside className={`fixed inset-0 z-40 bg-slate-50 md:static md:w-80 md:h-screen border-r border-slate-100 p-8 flex flex-col transition-transform duration-300 ease-in-out print:hidden ${isMobileMenuOpen ? 'translate-x-0 pt-24' : '-translate-x-full md:translate-x-0'}`}>
         
         <div className="hidden md:flex flex-col gap-0.5 mb-14 px-1">
@@ -417,7 +483,7 @@ export default function App() {
             setEditingOrder(null);
             setCustomerContext(null);
           }} />}
-          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
+          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} isBackgroundLoading={bgFilling} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
           {currentView === APP_VIEWS.BATCH_ANALYTICS && <BatchAnalytics orders={orders} batchCosts={batchCosts} onUpdateBatchCost={handleUpdateBatchCost} initialEditBatch={batchToEditInAnalytics} />}
           {currentView === APP_VIEWS.NET_REVENUE && <NetRevenue orders={orders} batchCosts={batchCosts} />}
           </Suspense>

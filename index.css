@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* one shared elevation token so cards read as depth without heavy borders */
+  .shadow-card {
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 12px 28px -18px rgba(15, 23, 42, 0.12);
+  }
+}
+
+/* --- lightweight, GPU-friendly motion (transform / opacity / background-position only) --- */
+
+@keyframes nn-toast-in {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-toast-in { animation: nn-toast-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+@keyframes nn-progress {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(420%); }
+}
+.animate-progress { animation: nn-progress 1.05s ease-in-out infinite; }
+
+@keyframes nn-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e8edf2 37%, #f1f5f9 63%);
+  background-size: 400% 100%;
+  animation: nn-shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-toast-in, .animate-progress, .skeleton { animation: none; }
+}
