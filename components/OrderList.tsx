@@ -7,6 +7,7 @@ interface OrderListProps {
   orders: Order[];
   batchCosts?: BatchCost[];
   isBackgroundLoading?: boolean;
+  initialSearch?: string | null;
   onDelete: (id: string | string[]) => void;
   onEdit: (order: Order) => void;
   onAddMore: (order: Order) => void;
@@ -15,9 +16,14 @@ interface OrderListProps {
   onMoveCustomerOrders?: (orders: Order[], targetBatch: string) => void | Promise<void>;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], isBackgroundLoading = false, onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], isBackgroundLoading = false, initialSearch = null, onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
   const [isMoving, setIsMoving] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch ?? '');
+
+  // Seed the search box when arriving here focused on one customer.
+  useEffect(() => {
+    if (initialSearch) setSearchTerm(initialSearch);
+  }, [initialSearch]);
   const [batchFilter, setBatchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [batchMoveTarget, setBatchMoveTarget] = useState('');

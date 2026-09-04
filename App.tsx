@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp, CheckCircle2, AlertTriangle, Users } from 'lucide-react';
 import { Order, OrderFormData, BatchCost } from './types';
 import { APP_VIEWS, AppView, APP_NAME, BUILD_VERSION } from './constants';
 import {
@@ -23,6 +23,7 @@ const OrderForm = lazy(() => import('./components/OrderForm').then(m => ({ defau
 const OrderList = lazy(() => import('./components/OrderList').then(m => ({ default: m.OrderList })));
 const BatchAnalytics = lazy(() => import('./components/BatchAnalytics').then(m => ({ default: m.BatchAnalytics })));
 const NetRevenue = lazy(() => import('./components/NetRevenue').then(m => ({ default: m.NetRevenue })));
+const Customers = lazy(() => import('./components/Customers').then(m => ({ default: m.Customers })));
 
 const ViewFallback = () => (
   <div className="flex items-center justify-center py-24 text-slate-400">
@@ -83,6 +84,7 @@ export default function App() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [batchToEditInAnalytics, setBatchToEditInAnalytics] = useState<string | null>(null);
+  const [customerFocusSearch, setCustomerFocusSearch] = useState<string | null>(null);
 
   // Bumped on every full (re)load so a superseded background fill can bail out.
   const loadTokenRef = useRef(0);
@@ -369,6 +371,7 @@ export default function App() {
         setEditingOrder(null);
         setCustomerContext(null);
         setBatchToEditInAnalytics(null);
+        setCustomerFocusSearch(null);
         setIsMobileMenuOpen(false);
       }}
       className={`flex items-center gap-3 w-full px-5 py-3.5 rounded-xl transition-all duration-200 font-semibold text-sm ${currentView === view ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 translate-x-1' : 'text-slate-500 hover:bg-white hover:text-slate-900'}`}
@@ -422,6 +425,7 @@ export default function App() {
           <NavItem view={APP_VIEWS.ORDER_LIST} icon={List} label="All Orders" />
           <NavItem view={APP_VIEWS.BATCH_ANALYTICS} icon={PieChart} label="Financial Reports" />
           <NavItem view={APP_VIEWS.NET_REVENUE} icon={TrendingUp} label="Net Revenue" />
+          <NavItem view={APP_VIEWS.CUSTOMERS} icon={Users} label="Customers" />
         </nav>
         
         <div className="mt-auto pt-8 border-t border-slate-200/60 space-y-5">
@@ -464,6 +468,7 @@ export default function App() {
                 {currentView === APP_VIEWS.ORDER_LIST && 'Inventory Database'}
                 {currentView === APP_VIEWS.BATCH_ANALYTICS && 'Performance Analytics'}
                 {currentView === APP_VIEWS.NET_REVENUE && 'Net Revenue Analysis'}
+                {currentView === APP_VIEWS.CUSTOMERS && 'Customer Analytics'}
               </h1>
           </div>
           <button className="md:hidden p-3 bg-white shadow-sm border border-slate-100 rounded-xl text-slate-900" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -483,9 +488,10 @@ export default function App() {
             setEditingOrder(null);
             setCustomerContext(null);
           }} />}
-          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} isBackgroundLoading={bgFilling} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
+          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} isBackgroundLoading={bgFilling} initialSearch={customerFocusSearch} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
           {currentView === APP_VIEWS.BATCH_ANALYTICS && <BatchAnalytics orders={orders} batchCosts={batchCosts} onUpdateBatchCost={handleUpdateBatchCost} initialEditBatch={batchToEditInAnalytics} />}
           {currentView === APP_VIEWS.NET_REVENUE && <NetRevenue orders={orders} batchCosts={batchCosts} />}
+          {currentView === APP_VIEWS.CUSTOMERS && <Customers orders={orders} onViewCustomerOrders={(s) => { setCustomerFocusSearch(s); setCurrentView(APP_VIEWS.ORDER_LIST); }} />}
           </Suspense>
         </div>
       </main>

@@ -18,7 +18,8 @@ export const APP_VIEWS = {
   NEW_ORDER: 'new_order',
   ORDER_LIST: 'order_list',
   BATCH_ANALYTICS: 'batch_analytics',
-  NET_REVENUE: 'net_revenue'
+  NET_REVENUE: 'net_revenue',
+  CUSTOMERS: 'customers'
 } as const;
 
 export type AppView = typeof APP_VIEWS[keyof typeof APP_VIEWS];
