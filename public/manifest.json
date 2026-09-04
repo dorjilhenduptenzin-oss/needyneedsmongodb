@@ -1,7 +1,7 @@
 {
-  "name": "NeedyNeeds Manager",
-  "short_name": "NeedyNeeds",
-  "description": "A comprehensive application for managing orders and batch analytics",
+  "name": "Needy Needs",
+  "short_name": "Needy Needs",
+  "description": "Orders, batches and customer analytics for Needy Needs",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,22 +10,16 @@
   "theme_color": "#1e293b",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231e293b' width='192' height='192'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='80' font-weight='bold' fill='white' font-family='Inter'>N</text></svg>",
+      "src": "/logo-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231e293b' width='512' height='512'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='200' font-weight='bold' fill='white' font-family='Inter'>N</text></svg>",
+      "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231e293b' width='192' height='192'/><circle cx='96' cy='96' r='95' fill='none' stroke='white' stroke-width='2'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='80' font-weight='bold' fill='white' font-family='Inter'>N</text></svg>",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
     }
   ],
   "screenshots": [

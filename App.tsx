@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { LayoutDashboard, PlusCircle, List, Menu, X, PieChart, Loader2, RefreshCw, CloudOff, Cloud, TrendingUp, CheckCircle2, AlertTriangle, Users } from 'lucide-react';
 import { Order, OrderFormData, BatchCost } from './types';
-import { APP_VIEWS, AppView, APP_NAME, BUILD_VERSION } from './constants';
+import { APP_VIEWS, AppView, BUILD_VERSION } from './constants';
 import {
   loadDataFromSheets,
   fetchOrdersPage,
@@ -55,6 +55,28 @@ const StatusToast = ({ kind, text, onDismiss }: { kind: ToastKind; text: string;
         )}
       </div>
     </div>
+  );
+};
+
+// Brand logo, with a text fallback if the image file is missing.
+const AppLogo = ({ className = '', pulse = false }: { className?: string; pulse?: boolean }) => {
+  const [failed, setFailed] = React.useState(false);
+  if (failed) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <span className="font-serif text-2xl font-bold text-slate-900 tracking-tight leading-none">Needy Needs</span>
+        <span className="text-[9px] uppercase tracking-[0.28em] font-extrabold text-slate-400">More than just essentials</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src="/logo.png"
+      alt="Needy Needs"
+      draggable={false}
+      className={`${className} select-none ${pulse ? 'animate-pulse' : ''}`}
+      onError={() => setFailed(true)}
+    />
   );
 };
 
@@ -383,12 +405,8 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-        <Loader2 className="animate-spin h-10 w-10 text-slate-900 mb-6" />
-        <div className="text-center">
-            <h1 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">{APP_NAME}</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Connecting to Secure Cloud</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white p-8">
+        <AppLogo className="w-52 h-52 sm:w-64 sm:h-64 object-contain" pulse />
       </div>
     );
   }
@@ -414,9 +432,8 @@ export default function App() {
 
       <aside className={`fixed inset-0 z-40 bg-slate-50 md:static md:w-80 md:h-screen border-r border-slate-100 p-8 flex flex-col transition-transform duration-300 ease-in-out print:hidden ${isMobileMenuOpen ? 'translate-x-0 pt-24' : '-translate-x-full md:translate-x-0'}`}>
         
-        <div className="hidden md:flex flex-col gap-0.5 mb-14 px-1">
-           <span className="font-serif text-3xl font-bold text-slate-900 tracking-tight leading-none">NeedyNeeds</span>
-           <span className="text-[10px] uppercase tracking-[0.3em] font-extrabold text-slate-400 mt-1">Inventory Management</span>
+        <div className="mb-10 flex justify-center md:justify-start">
+           <AppLogo className="w-40 h-40 md:w-44 md:h-44 object-contain" />
         </div>
         
         <nav className="space-y-1.5 flex-1">

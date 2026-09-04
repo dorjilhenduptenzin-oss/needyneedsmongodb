@@ -1,5 +1,5 @@
 
-export const APP_NAME = "NeedyNeeds Inventory";
+export const APP_NAME = "Needy Needs";
 export const BUILD_VERSION = "4.6.0";
 
 export const DELIVERY_FEE_PER_ITEM = 100;
