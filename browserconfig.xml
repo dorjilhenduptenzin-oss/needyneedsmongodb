@@ -7,9 +7,5 @@
             <square310x310logo src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 310'><rect fill='%231e293b' width='310' height='310'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='80' font-weight='bold' fill='white' font-family='Inter'>N</text></svg>"/>
             <TileColor>#1e293b</TileColor>
         </tile>
-        <notification>
-            <frequency_ms>60</frequency_ms>
-            <polling-uri2>http://notifications.buildmypinnedsite.com/?client=wns&amp;alg=sha256&amp;hash=nkvM3C8aPIX8ZHXMaLJVFYUIDzXQVHMVfqQQkcJlVwQ%3D</polling-uri2>
-        </notification>
     </msapplication>
 </browserconfig>
