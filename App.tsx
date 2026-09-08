@@ -338,10 +338,13 @@ export default function App() {
     }
   };
 
-  const handleUpdateBatchCost = async (cost: BatchCost) => {
+  const handleUpdateBatchCost = async (
+    cost: BatchCost,
+    opts?: { busyLabel?: string; successMessage?: string }
+  ) => {
     try {
       setIsSyncing(true);
-      setBusyLabel('Saving batch cost…');
+      setBusyLabel(opts?.busyLabel ?? 'Saving batch cost…');
       setSyncError(null);
 
       let persisted: BatchCost | null = null;
@@ -374,11 +377,11 @@ export default function App() {
           console.error('Failed to refresh batch costs after save', e);
         }
 
-        setSyncMessage('Batch cost saved');
+        setSyncMessage(opts?.successMessage ?? 'Batch cost saved');
       }
     } catch (error: any) {
       setSyncError(error?.message || 'Unable to save batch cost. The change has not been confirmed.');
-      throw error; // let the modal know the save failed
+      throw error; // let the caller know the save failed
     } finally {
       setIsSyncing(false);
       setBusyLabel(null);
@@ -506,7 +509,7 @@ export default function App() {
             setEditingOrder(null);
             setCustomerContext(null);
           }} />}
-          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} isBackgroundLoading={bgFilling} initialSearch={customerFocusSearch} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
+          {currentView === APP_VIEWS.ORDER_LIST && <OrderList orders={orders} batchCosts={batchCosts} isBackgroundLoading={bgFilling} initialSearch={customerFocusSearch} onDelete={handleDeleteOrder} onEdit={(o) => { setEditingOrder(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onAddMore={(o) => { setCustomerContext(o); setCurrentView(APP_VIEWS.NEW_ORDER); }} onEditBatchCost={(batchName) => { setBatchToEditInAnalytics(batchName); setCurrentView(APP_VIEWS.BATCH_ANALYTICS); }} onUpdateBatchCost={handleUpdateBatchCost} onUpdateOrders={handleBulkUpdateOrders} onMoveCustomerOrders={handleMoveCustomerOrders} />}
           {currentView === APP_VIEWS.BATCH_ANALYTICS && <BatchAnalytics orders={orders} batchCosts={batchCosts} onUpdateBatchCost={handleUpdateBatchCost} initialEditBatch={batchToEditInAnalytics} />}
           {currentView === APP_VIEWS.NET_REVENUE && <NetRevenue orders={orders} batchCosts={batchCosts} />}
           {currentView === APP_VIEWS.CUSTOMERS && <Customers orders={orders} onViewCustomerOrders={(s) => { setCustomerFocusSearch(s); setCurrentView(APP_VIEWS.ORDER_LIST); }} />}

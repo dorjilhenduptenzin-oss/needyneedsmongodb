@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Order, TransportMode, BatchCost } from '../types';
-import { Search, MapPin, Phone, Edit2, Package, Bus, Truck, Mail, Home, X, ArrowRight, Trash2, Edit3, Plus, StickyNote, Loader2 } from 'lucide-react';
+import { Search, MapPin, Phone, Edit2, Package, Bus, Truck, Mail, Home, X, ArrowRight, Trash2, Edit3, Plus, StickyNote, Loader2, Check } from 'lucide-react';
 
 interface OrderListProps {
   orders: Order[];
@@ -12,12 +12,14 @@ interface OrderListProps {
   onEdit: (order: Order) => void;
   onAddMore: (order: Order) => void;
   onEditBatchCost?: (batchName: string) => void;
+  onUpdateBatchCost?: (cost: BatchCost, opts?: { busyLabel?: string; successMessage?: string }) => void | Promise<void>;
   onUpdateOrders: (orders: Order[]) => void;
   onMoveCustomerOrders?: (orders: Order[], targetBatch: string) => void | Promise<void>;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], isBackgroundLoading = false, initialSearch = null, onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], isBackgroundLoading = false, initialSearch = null, onDelete, onEdit, onAddMore, onEditBatchCost, onUpdateBatchCost, onUpdateOrders, onMoveCustomerOrders }) => {
   const [isMoving, setIsMoving] = useState(false);
+  const [togglingPacked, setTogglingPacked] = useState(false);
   const [searchTerm, setSearchTerm] = useState(initialSearch ?? '');
 
   // Seed the search box when arriving here focused on one customer.
@@ -45,6 +47,30 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], i
 
   const isBatchPacked = (batchName: string) => batchPackedMap.get(batchName) === true;
   const batchOptionLabel = (batchName: string) => `${batchName} · ${isBatchPacked(batchName) ? 'Packed' : 'Pending'}`;
+
+  // Flip a batch's packed status straight from the filtered-batch banner,
+  // without going to Financial Reports. Preserves any cost values already set;
+  // creates a zero-cost row if the batch has none yet (same as Financial Reports).
+  const handleTogglePacked = async () => {
+    if (batchFilter === 'all' || !onUpdateBatchCost || togglingPacked) return;
+    const existing = batchCosts.find(c => c.batchName === batchFilter);
+    const nextPacked = !isBatchPacked(batchFilter);
+    const packedAt = nextPacked ? new Date().toISOString() : null;
+    const payload: BatchCost = existing
+      ? { ...existing, isPacked: nextPacked, packedAt }
+      : { batchName: batchFilter, totalCostPrice: 0, oatInputValue: 0, deliveryFeeQuantity: 0, isPacked: nextPacked, packedAt, version: 1 };
+    setTogglingPacked(true);
+    try {
+      await onUpdateBatchCost(payload, {
+        busyLabel: nextPacked ? 'Marking as packed…' : 'Marking as not packed…',
+        successMessage: nextPacked ? `${batchFilter} marked as packed` : `${batchFilter} marked as not packed`,
+      });
+    } catch {
+      /* App surfaces the error in the toast */
+    } finally {
+      setTogglingPacked(false);
+    }
+  };
 
   const filteredOrders = useMemo(() => {
     const q = searchTerm.toLowerCase();
@@ -183,10 +209,29 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, batchCosts = [], i
 
       {batchFilter !== 'all' && (
         <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border ${isBatchPacked(batchFilter) ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-          <span className="text-sm font-bold text-slate-800 font-serif">{batchFilter}</span>
-          <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${isBatchPacked(batchFilter) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
-            {isBatchPacked(batchFilter) ? 'Packed' : 'Not packed yet'}
-          </span>
+          <span className="text-sm font-bold text-slate-800 font-serif truncate">{batchFilter}</span>
+          {onUpdateBatchCost ? (
+            <button
+              onClick={handleTogglePacked}
+              disabled={togglingPacked}
+              title={isBatchPacked(batchFilter) ? 'Tap to mark this batch as not packed' : 'Tap to mark this batch as packed'}
+              className={`shrink-0 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border transition-colors disabled:opacity-60 ${
+                isBatchPacked(batchFilter)
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200'
+                  : 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600 shadow-sm shadow-amber-200'
+              }`}
+            >
+              {togglingPacked
+                ? <><Loader2 size={12} className="animate-spin" /> Saving…</>
+                : isBatchPacked(batchFilter)
+                  ? <><Check size={12} /> Packed</>
+                  : <><Package size={12} /> Mark as packed</>}
+            </button>
+          ) : (
+            <span className={`shrink-0 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${isBatchPacked(batchFilter) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
+              {isBatchPacked(batchFilter) ? 'Packed' : 'Not packed yet'}
+            </span>
+          )}
         </div>
       )}
 
