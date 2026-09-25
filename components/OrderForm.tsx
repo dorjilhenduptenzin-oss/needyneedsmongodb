@@ -229,7 +229,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, customerConte
                 <div className="font-bold text-slate-400 px-1 shrink-0">-</div>
                 <div className="flex-1 w-full">
                     <select value={bNumber} onChange={(e) => setBNumber(e.target.value)} className={selectClasses}>
-                    {Array.from({length: 50}, (_, i) => String(i + 1).padStart(2, '0')).map(n => (
+                    {Array.from({length: 90}, (_, i) => String(i + 1).padStart(2, '0')).map(n => (
                             <option key={n} value={n}>{n}</option>
                         ))}
                     </select>
